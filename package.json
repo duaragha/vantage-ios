@@ -1,6 +1,6 @@
 {
   "name": "vantage-ios",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Vantage iOS shell for LiveContainer.",
   "type": "module",

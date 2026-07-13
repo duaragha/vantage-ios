@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   server: {
     url: process.env.CAPACITOR_SERVER_URL ?? productionUrl,
     errorPath: 'error.html',
-    appendUserAgent: ' Vantage-iOS/1.0.1',
+    appendUserAgent: ' Vantage-iOS/1.0.2',
   },
 };
 
