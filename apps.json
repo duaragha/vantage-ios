@@ -20,14 +20,20 @@
       "versionDate": "2026-07-13",
       "versionDescription": "Initial iPhone release with the complete mobile Vantage interface.",
       "downloadURL": "https://github.com/duaragha/vantage-ios/releases/download/v1.0.0/Vantage.ipa",
-      "size": 0,
+      "size": 1097766,
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      },
       "versions": [
         {
           "version": "1.0.0",
+          "buildVersion": "2",
           "date": "2026-07-13T00:00:00Z",
           "localizedDescription": "Initial iPhone release with the complete mobile Vantage interface.",
           "downloadURL": "https://github.com/duaragha/vantage-ios/releases/download/v1.0.0/Vantage.ipa",
-          "size": 0
+          "size": 1097766,
+          "minOSVersion": "14.0"
         }
       ]
     }
