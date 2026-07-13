@@ -1,7 +1,2 @@
 packages:
   - "."
-
-onlyBuiltDependencies:
-  - "@capacitor/assets"
-  - "sharp"
-

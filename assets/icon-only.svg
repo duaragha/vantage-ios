@@ -18,10 +18,9 @@
       </feMerge>
     </filter>
   </defs>
-  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
   <circle cx="512" cy="512" r="332" fill="none" stroke="#ffffff" stroke-opacity="0.055" stroke-width="2"/>
   <path d="M224 303L470 748C488 781 536 781 554 748L800 303" fill="none" stroke="#5eead4" stroke-opacity="0.22" stroke-width="78" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
   <path d="M224 303L470 748C488 781 536 781 554 748L800 303" fill="none" stroke="url(#v)" stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="800" cy="303" r="28" fill="#e8fffb"/>
 </svg>
-
