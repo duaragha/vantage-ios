@@ -1,0 +1,60 @@
+workflows:
+  vantage-ios-unsigned:
+    name: Vantage iOS LiveContainer IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: latest
+      cocoapods: default
+      node: 20
+      vars:
+        CAPACITOR_SERVER_URL: "https://raghavsgamingpc.tail4d6220.ts.net:3000"
+    scripts:
+      - name: Enable pnpm
+        script: |
+          corepack enable
+          corepack prepare pnpm@10.32.1 --activate
+      - name: Install dependencies
+        script: pnpm install --frozen-lockfile
+      - name: Sync Capacitor iOS
+        script: pnpm exec cap sync ios
+      - name: Build iPhone app
+        script: |
+          set -euo pipefail
+          cd ios/App
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            MARKETING_VERSION="1.0.0" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            build
+      - name: Package and verify IPA
+        script: |
+          set -euo pipefail
+          APP_PATH="ios/App/build/Build/Products/Release-iphoneos/App.app"
+          STAGE_PATH="build/ios/unsigned"
+          IPA_PATH="build/ios/Vantage.ipa"
+
+          test -d "$APP_PATH"
+          codesign --verify --deep --strict "$APP_PATH"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")" = "com.raghav.vantage"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")" = "1.0.0"
+
+          rm -rf "$STAGE_PATH" "$IPA_PATH"
+          mkdir -p "$STAGE_PATH/Payload"
+          ditto "$APP_PATH" "$STAGE_PATH/Payload/Vantage.app"
+          ditto -c -k --sequesterRsrc --keepParent "$STAGE_PATH/Payload" "$IPA_PATH"
+          unzip -t "$IPA_PATH"
+    artifacts:
+      - build/ios/Vantage.ipa
+      - /tmp/xcodebuild_logs/*.log
