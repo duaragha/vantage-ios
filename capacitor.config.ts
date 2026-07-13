@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const productionUrl = 'https://raghavsgamingpc.tail4d6220.ts.net:3000';
+const productionUrl = 'https://raghavsgamingpc.tail4d6220.ts.net:3500';
 
 const config: CapacitorConfig = {
   appId: 'com.raghav.vantage',
@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   server: {
     url: process.env.CAPACITOR_SERVER_URL ?? productionUrl,
     errorPath: 'error.html',
-    appendUserAgent: ' Vantage-iOS/1.0',
+    appendUserAgent: ' Vantage-iOS/1.0.1',
   },
 };
 
