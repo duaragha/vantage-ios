@@ -1,0 +1,41 @@
+{
+  "name": "Vantage",
+  "identifier": "com.raghav.vantage.source",
+  "subtitle": "Personal portfolio intelligence",
+  "description": "The private Vantage dashboard, packaged for LiveContainer.",
+  "website": "https://github.com/duaragha/vantage-ios",
+  "tintColor": "#5EEAD4",
+  "iconURL": "https://raw.githubusercontent.com/duaragha/vantage-ios/main/assets/icon.png",
+  "apps": [
+    {
+      "name": "Vantage",
+      "bundleIdentifier": "com.raghav.vantage",
+      "developerName": "Raghav",
+      "subtitle": "Personal portfolio intelligence",
+      "localizedDescription": "Your live Vantage research, portfolio, goals, and trading dashboard.",
+      "iconURL": "https://raw.githubusercontent.com/duaragha/vantage-ios/main/assets/icon.png",
+      "tintColor": "#5EEAD4",
+      "category": "utilities",
+      "version": "1.0.0",
+      "versionDate": "2026-07-13",
+      "versionDescription": "Initial iPhone release with the complete mobile Vantage interface.",
+      "downloadURL": "https://github.com/duaragha/vantage-ios/releases/download/v1.0.0/Vantage.ipa",
+      "size": 1097766,
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "buildVersion": "2",
+          "date": "2026-07-13T00:00:00Z",
+          "localizedDescription": "Initial iPhone release with the complete mobile Vantage interface.",
+          "downloadURL": "https://github.com/duaragha/vantage-ios/releases/download/v1.0.0/Vantage.ipa",
+          "size": 1097766,
+          "minOSVersion": "14.0"
+        }
+      ]
+    }
+  ]
+}

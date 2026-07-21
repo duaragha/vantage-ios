@@ -1,0 +1,759 @@
+// Equity Agent — Prisma schema
+//
+// Notes:
+// - pgvector columns (Article.embedding, ThesisEvaluation.embedding) are declared as
+//   Unsupported("vector(384)"). Prisma can't read/write them natively, so they are
+//   populated via $executeRaw / $queryRaw helpers in packages/db/src.
+// - The `vector` extension is created by the custom SQL prepended to the initial
+//   migration (see prisma/migrations/<ts>_init/migration.sql).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model UserSettings {
+  id                          Int      @id @default(1)
+  passwordHash                String
+  monthlyBudget               Decimal  @default(0)
+  singlePositionCapPct        Float    @default(15)
+  sectorCapPct                Float    @default(40)
+  intradayMoveThresholdPct    Float    @default(5)
+  passCooldownDays            Int      @default(14)
+  perTickerDailyAlertCap      Int      @default(3)
+  telegramChatId              String? // Legacy only; worker delivery uses TELEGRAM_CHAT_ID.
+  dailySpendCapUsd            Decimal  @default(2.0)
+  monthlySpendCapUsd          Decimal  @default(10.0)
+  killSwitch                  Boolean  @default(false)
+  timezone                    String   @default("America/Toronto")
+  // Phase 15 — discovery engine tuning. `discoveryWeights` holds an optional
+  // override blob shaped like { news, earnings, insider, filings, momentum, sentiment };
+  // when null the defaults in packages/core/src/discover/signals.ts win.
+  discoveryWeights            Json?
+  // Microcap floor for the discovery universe. $500M default per spec "Microcap noise".
+  discoveryMinMcapUsd         Decimal  @default(500000000)
+  // Phase 15 — daily cap for Haiku ticker-extract fallback calls across the
+  // whole system. Incremented inline; checked before spending tokens.
+  haikuTickerExtractUsedToday Int      @default(0)
+  haikuTickerExtractDay       DateTime @default(now())
+  // Phase 16 — multi-exchange coverage. JSON array of exchange codes the
+  // universe refresh should iterate. Default covers US + TSX for a Canadian
+  // Wealthsimple user. Allowed values: "US", "TO" (TSX), "NE" (Cboe Canada
+  // / NEO), "V" (TSX-V). Plumbs into pollTickerUniverse.
+  exchangesEnabled            Json     @default("[\"US\", \"TO\"]")
+  // Phase 17 — Catalyst engine knobs. Cap on catalyst-driven buy suggestions
+  // emitted per day, whether multi-signal conjunction is required for a buy
+  // suggestion to fire, daily Sonnet spend cap dedicated to the catalyst
+  // pipeline, and a master enable flag.
+  catalystMaxPerDay           Int      @default(2)
+  catalystRequireConjunction  Boolean  @default(true)
+  catalystDailySpendCapUsd    Decimal  @default(1.0)
+  catalystEnabled             Boolean  @default(true)
+  updatedAt                   DateTime @updatedAt
+}
+
+model Position {
+  id                   Int            @id @default(autoincrement())
+  ticker               String
+  shares               Decimal
+  avgCost              Decimal
+  /// Currency avgCost is denominated in — the ticker's listing currency
+  /// ("CAD" for .TO/.NE/.V, "USD" for US listings). avgCost + price are both
+  /// stored natively; the display layer converts on read. Defaults to USD so
+  /// existing US-only holdings backfill correctly.
+  currency             String         @default("USD") // CAD | USD
+  category             String // Conviction | Speculative | Meme | Income | Other
+  sector               String?
+  /// Optional native-currency thresholds. Alert timestamps debounce repeated
+  /// poll cycles until the threshold is edited or price moves back through it.
+  stopLoss             Decimal?
+  priceTarget          Decimal?
+  stopLossAlertedAt    DateTime?
+  priceTargetAlertedAt DateTime?
+  openedAt             DateTime       @default(now())
+  closedAt             DateTime?
+  notes                String?
+  thesis               Thesis?
+  updatedAt            DateTime       @updatedAt
+  /// Account this lot belongs to. Nullable on the column for the safe two-step
+  /// migration (seed default account, backfill, then SET NOT NULL); the SQL
+  /// migration enforces NOT NULL after backfill so the type-level invariant
+  /// holds. onDelete: Restrict — we never want to lose a holding because an
+  /// account row was deleted; archive the Account instead.
+  accountId            Int
+  account              Account        @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  goalLinks            GoalPosition[]
+
+  @@unique([accountId, ticker])
+  @@index([accountId])
+}
+
+/// Brokerage account (Wealthsimple sub-account) that owns one or more
+/// Position rows. Modelled per-currency: a Plus/Premium user with a USD
+/// TFSA sub-account holds it as a separate row with currency="USD".
+model Account {
+  id                  Int         @id @default(autoincrement())
+  name                String      @unique
+  type                AccountType
+  /// "CAD" | "USD" — denomination of the sub-account.
+  currency            String      @default("CAD")
+  broker              String      @default("Wealthsimple")
+  /// CRA contribution room in CAD as of the most recent update; null when
+  /// unknown or not applicable (RESP, Margin, Personal/Non-Reg, Corporate).
+  contributionRoomCad Decimal?
+  archivedAt          DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  positions           Position[]
+  goals               Goal[]
+
+  @@index([type])
+  @@index([archivedAt])
+}
+
+enum AccountType {
+  TFSA
+  RRSP
+  SpousalRRSP
+  RESP
+  LIRA
+  RRIF
+  Personal
+  Margin
+  Corporate
+}
+
+model Thesis {
+  id              Int                @id @default(autoincrement())
+  positionId      Int                @unique
+  position        Position           @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  summary         String
+  pillars         Json // [{ statement, status, lastEvaluatedAt, evidence }]
+  riskFactors     Json // [{ statement, triggered, evidence }]
+  status          ThesisStatus       @default(Intact)
+  createdAt       DateTime           @default(now())
+  lastValidatedAt DateTime           @default(now())
+  evaluations     ThesisEvaluation[]
+}
+
+enum ThesisStatus {
+  Intact
+  Strengthening
+  Weakening
+  Broken
+}
+
+model ThesisEvaluation {
+  id         Int                         @id @default(autoincrement())
+  thesisId   Int
+  thesis     Thesis                      @relation(fields: [thesisId], references: [id], onDelete: Cascade)
+  prevStatus ThesisStatus
+  newStatus  ThesisStatus
+  rationale  String
+  citations  Json // [{ articleId, quote }]
+  createdAt  DateTime                    @default(now())
+  embedding  Unsupported("vector(384)")?
+}
+
+model Watchlist {
+  id      Int      @id @default(autoincrement())
+  ticker  String   @unique
+  addedAt DateTime @default(now())
+  reason  String?
+  addedBy String // "user" | "agent"
+}
+
+model Article {
+  id              Int                         @id @default(autoincrement())
+  sourceTier      Int // 1 | 2 | 3
+  source          String // finnhub | edgar | reddit | stocktwits | ...
+  domain          String?
+  url             String                      @unique
+  headline        String
+  body            String?
+  publishedAt     DateTime
+  tickers         String[]
+  clusterId       String?
+  trustedCitable  Boolean                     @default(true)
+  satireBlocked   Boolean                     @default(false)
+  socialSentiment String? // native social bull/bear tag (StockTwits); null for untagged/non-social
+  fetchedAt       DateTime                    @default(now())
+  embedding       Unsupported("vector(384)")?
+
+  @@index([publishedAt])
+  @@index([tickers])
+}
+
+model MarketEvent {
+  id          Int       @id @default(autoincrement())
+  kind        EventKind
+  ticker      String?
+  payload     Json
+  occurredAt  DateTime
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  // Bounded-retry plumbing — buildAlertFromEvent bumps retryCount on every
+  // operational throw, and stamps processedAt + a `processingFailed` payload
+  // flag once retryCount >= MAX_RETRIES so the event drops out of the queue
+  // but stays searchable. See docs/investigations/event-backlog-2026-05-22.md.
+  retryCount  Int       @default(0)
+  lastErrorAt DateTime?
+
+  // The alert dispatcher's precheck + sweep query the unprocessed queue every
+  // 30s; without this the lookup scans the full (growing) table.
+  @@index([processedAt])
+}
+
+enum EventKind {
+  Earnings
+  Filing8K
+  BreakingNews
+  IntradayMove
+  SectorNews
+  Macro
+  SentimentSpike
+  // Phase 17 — Catalyst events. Emitted by the new catalyst detectors and
+  // consumed by packages/core/src/catalyst/engine.ts in sub-phase B.
+  InsiderCluster
+  EarningsBeat
+  Material8K
+  AnalystUpgrade
+}
+
+model Insight {
+  id           Int           @id @default(autoincrement())
+  kind         InsightKind
+  title        String
+  body         String
+  reasoning    String
+  citations    Json
+  actionJson   Json? // { type, ticker, shares, targetTicker?, priceSnapshot }
+  confidence   Confidence
+  status       InsightStatus @default(New)
+  userFeedback UserFeedback?
+  triggeredBy  String // digest:morning | digest:evening | event:<kind> | monthly | weekly
+  clusterId    String?
+  createdAt    DateTime      @default(now())
+  resolvedAt   DateTime?
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+enum InsightKind {
+  ThesisUpdate
+  Rebalance
+  BuySuggestion
+  Alert
+}
+
+enum Confidence {
+  Low
+  Medium
+  High
+}
+
+enum InsightStatus {
+  New
+  Seen
+  Bought
+  Passed
+  Snoozed
+}
+
+enum UserFeedback {
+  Bought
+  Passed
+  Snoozed
+}
+
+model PassCooldown {
+  id         Int      @id @default(autoincrement())
+  ticker     String
+  actionKind String // "buy" | "trim" | "rotate"
+  until      DateTime
+  insightId  Int?
+
+  @@unique([ticker, actionKind])
+  @@index([until])
+}
+
+model ChatThread {
+  id         Int           @id @default(autoincrement())
+  title      String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  archivedAt DateTime?
+  messages   ChatMessage[]
+
+  @@index([updatedAt])
+}
+
+model ChatMessage {
+  id        Int        @id @default(autoincrement())
+  threadId  Int
+  role      String // user | assistant
+  content   String
+  citations Json?
+  createdAt DateTime   @default(now())
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+}
+
+model LlmCall {
+  id                  Int      @id @default(autoincrement())
+  model               String
+  inputTokens         Int
+  outputTokens        Int
+  cachedTokens        Int      @default(0)
+  cacheCreationTokens Int      @default(0)
+  webSearchRequests   Int      @default(0)
+  costUsd             Decimal
+  purpose             String
+  createdAt           DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model JobRun {
+  id        Int       @id @default(autoincrement())
+  name      String
+  status    String // queued | running | succeeded | failed
+  error     String?
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  metadata  Json?
+
+  @@index([name, startedAt])
+}
+
+/// Durable Telegram delivery queue. Producers persist a message before they
+/// consider an alert emitted; the worker retries transient failures and leaves
+/// rows pending while Telegram is not configured.
+model TelegramDelivery {
+  id                    Int                    @id @default(autoincrement())
+  dedupeKey             String                 @unique
+  text                  String
+  parseMode             String?
+  disableNotification   Boolean                @default(false)
+  disableWebPagePreview Boolean                @default(true)
+  status                TelegramDeliveryStatus @default(Pending)
+  attempts              Int                    @default(0)
+  nextAttemptAt         DateTime               @default(now())
+  lastAttemptAt         DateTime?
+  sentAt                DateTime?
+  expiresAt             DateTime?
+  messageId             Int?
+  lastError             String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([expiresAt])
+}
+
+enum TelegramDeliveryStatus {
+  Pending
+  Sending
+  Sent
+  Dead
+}
+
+model BacktestRun {
+  id        Int      @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  config    Json // { caps, monthlyBudget, rules }
+  result    Json // { entries, exits, finalValue, returnPct, spyReturnPct, drawdownPct }
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Phase 15 — Market discovery + active rotation
+// ---------------------------------------------------------------------------
+
+/// The universe of common-stock symbols known to the system.
+/// Refreshed weekly (Sunday 6am) from Finnhub /stock/symbol + /stock/profile2
+/// (US) and a curated seed list + yahoo-finance2 profile calls (Canadian
+/// exchanges — Finnhub free tier doesn't cover TO/NE/V).
+/// Used by ticker-extract (regex + alias dictionary) and the discovery scorer.
+///
+/// `exchange` values: "US" (or a US MIC like XNAS/XNYS), "TO" (TSX),
+///                     "NE" (Cboe Canada / NEO), "V" (TSX-V).
+/// `currency` is derived from the exchange at write time and never mutated.
+/// `symbolRaw` is the original ticker without its suffix — e.g. "SHOP" for
+///   "SHOP.TO" — so we can still match cashtag regex hits ($SHOP) against a
+///   Canadian listing and disambiguate from the US Shopify symbol.
+model TickerUniverse {
+  id                  Int               @id @default(autoincrement())
+  symbol              String            @unique
+  name                String
+  exchange            String
+  currency            String            @default("USD") // USD | CAD
+  symbolRaw           String?
+  cik                 String?
+  sector              String?
+  marketCapUsd        Decimal?
+  category            SecurityCategory?
+  aliases             String[]          @default([])
+  // Phase 17 — quality gate flag. True for meme/lottery names that should
+  // never produce catalyst-driven buy suggestions. Auto-flagged by the
+  // nightly lottery detector (price < $5 AND 20d realized vol > 100%
+  // annualized) and overridable by the user.
+  isLottery           Boolean           @default(false)
+  lastRefreshed       DateTime          @default(now())
+  /// Last Finnhub profile attempt. Keeps the bounded enrichment queue moving
+  /// past unsupported symbols instead of retrying the same prefix every day.
+  profileAttemptedAt  DateTime?
+  /// Consecutive profile attempts that yielded no market cap. At 3 strikes
+  /// the nightly backfill parks the symbol on a monthly retry cadence; any
+  /// yielding attempt resets to 0. Transient (thrown) lookups never count.
+  profileAttemptCount Int               @default(0)
+
+  @@index([symbol])
+  @@index([sector])
+  @@index([exchange])
+  @@index([profileAttemptedAt])
+}
+
+/// Daily OHLCV bars per ticker, sourced from Alpaca, Yahoo Finance, or the
+/// bounded Tiingo fallback by pollEodHistory. Persisting these powers the
+/// multi-window return columns on /compare, gives the Value fallback a stable
+/// "latest close" when the live price oracle fails, and caches enough history
+/// for the backtest engine's fast path. Unique on (ticker, date); upserts are
+/// batched by pollEodHistory.
+model DailyBar {
+  id        Int      @id @default(autoincrement())
+  ticker    String
+  date      DateTime @db.Date
+  open      Decimal
+  high      Decimal
+  low       Decimal
+  close     Decimal
+  volume    BigInt   @default(0)
+  source    String   @default("unknown")
+  fetchedAt DateTime @default(now())
+
+  @@unique([ticker, date])
+  @@index([ticker, date(sort: Desc)])
+  @@index([date])
+}
+
+/// Latest live price per ticker. Updated every minute during market hours by
+/// pollPrices; falls back to DailyBar.close after hours. One row per ticker.
+///
+/// dayOpen/dayHigh/dayLow are TODAY's intraday levels from the Alpaca snapshot
+/// (IEX, real-time-ish, partial volume) — sourced alongside `price` for the
+/// scanner-universe pass. They let the day-trade scanner anchor entries to "break
+/// of today's high" instead of a multi-day DailyBar high. Nullable: held-ticker
+/// rows (Finnhub/yfinance path) and any pre-snapshot rows leave them null, and
+/// the scanner falls back to end-of-day levels (disclosed) when they're absent.
+model LivePrice {
+  id        Int      @id @default(autoincrement())
+  ticker    String   @unique
+  price     Decimal
+  dayOpen   Decimal?
+  dayHigh   Decimal?
+  dayLow    Decimal?
+  fetchedAt DateTime @default(now())
+  source    String // "alpaca" | "finnhub" | "yfinance" | "tiingo"
+
+  @@index([fetchedAt])
+}
+
+/// Nightly discovery score per ticker — append-only so we keep 30 days of
+/// history for trend analysis. Purged by computeDiscovery when older than 30d.
+model DiscoveryScore {
+  id              Int      @id @default(autoincrement())
+  ticker          String
+  score           Float
+  signalBreakdown Json
+  computedAt      DateTime @default(now())
+
+  @@index([computedAt, score])
+  @@index([ticker, computedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 17 — Catalyst-driven discovery
+// ---------------------------------------------------------------------------
+
+/// Form-4 insider transactions sourced from Finnhub
+/// `/stock/insider-transactions`. Filtered to transaction code 'P'
+/// (open-market purchases) by the poller — option exercises ('M'), grants,
+/// and sells are dropped. Used by the insider cluster detector to flag
+/// 3+ insider buys within a 7-day window.
+model InsiderTransaction {
+  id              Int      @id @default(autoincrement())
+  ticker          String
+  insiderName     String
+  insiderTitle    String?
+  transactionDate DateTime
+  transactionCode String
+  shares          Decimal
+  pricePerShare   Decimal
+  valueUsd        Decimal
+  filingDate      DateTime
+  source          String   @default("finnhub")
+  createdAt       DateTime @default(now())
+
+  @@unique([ticker, insiderName, transactionDate, shares])
+  @@index([ticker, filingDate])
+}
+
+/// Aggregate analyst recommendation snapshot per ticker per month from
+/// Finnhub `/stock/recommendation`. The upgrade detector compares the latest
+/// row to the prior period and emits an AnalystUpgrade MarketEvent when the
+/// strongBuy+buy total moves up by ≥2 or the consensus tier shifts.
+model AnalystRecommendation {
+  id         Int      @id @default(autoincrement())
+  ticker     String
+  /// YYYY-MM-01 (first of the month) — Finnhub returns one row per month.
+  period     DateTime
+  strongBuy  Int      @default(0)
+  buy        Int      @default(0)
+  hold       Int      @default(0)
+  sell       Int      @default(0)
+  strongSell Int      @default(0)
+  fetchedAt  DateTime @default(now())
+
+  @@unique([ticker, period])
+  @@index([ticker])
+}
+
+model FundamentalsSnapshot {
+  id                Int       @id @default(autoincrement())
+  ticker            String
+  periodEnd         DateTime  @db.Date
+  periodType        String
+  reportedAt        DateTime?
+  revenue           Decimal?
+  costOfRevenue     Decimal?
+  grossProfit       Decimal?
+  operatingIncome   Decimal?
+  netIncome         Decimal?
+  epsBasic          Decimal?
+  epsDiluted        Decimal?
+  totalAssets       Decimal?
+  totalLiabilities  Decimal?
+  longTermDebt      Decimal?
+  shortTermDebt     Decimal?
+  totalEquity       Decimal?
+  cash              Decimal?
+  operatingCashFlow Decimal?
+  freeCashFlow      Decimal?
+  capex             Decimal?
+  sharesOutstanding Decimal?
+  source            String
+  fetchedAt         DateTime  @default(now())
+
+  @@unique([ticker, periodEnd, periodType])
+  @@index([ticker])
+  @@index([periodEnd])
+}
+
+/// Provider percentages are stored as percentage points (12.5 means 12.5%).
+/// Multiples, beta, current/quick ratios, and debtToEquity are true ratios.
+/// Domain engines must convert percentage-point fields to decimal ratios at
+/// their boundary rather than guessing from magnitude.
+model TickerMetrics {
+  id                  Int      @id @default(autoincrement())
+  ticker              String   @unique
+  fetchedAt           DateTime @default(now())
+  peTtm               Float?
+  pegTtm              Float?
+  psTtm               Float?
+  pbTtm               Float?
+  evToEbitda          Float?
+  roeTtm              Float?
+  roicTtm             Float?
+  roaTtm              Float?
+  grossMarginTtm      Float?
+  operatingMarginTtm  Float?
+  netMarginTtm        Float?
+  debtToEquity        Float?
+  currentRatio        Float?
+  quickRatio          Float?
+  dividendYieldTtm    Float?
+  dividendPayoutRatio Float?
+  revenueGrowthYoy    Float?
+  revenueGrowth5y     Float?
+  epsGrowthYoy        Float?
+  epsGrowth5y         Float?
+  sharesOutstanding   Decimal?
+  marketCapUsd        Decimal?
+  beta                Float?
+  avgVolume30d        Float?
+  avgDollarVolume30d  Float?
+  source              String
+
+  @@index([ticker])
+}
+
+/// Savings/investment goal — drives account placement and security recommendations.
+model Goal {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  type                  GoalType
+  /// Target value in CAD. Engine compares this against the sum of linked
+  /// position values × allocation.
+  targetAmountCad       Decimal
+  /// Null = open-ended (e.g. Retirement without a fixed date).
+  targetDate            DateTime?
+  /// True when the user intends to liquidate toward the date (drives
+  /// risk-aversion in the glide path).
+  isWithdrawal          Boolean                @default(false)
+  notes                 String?
+  /// Optional user override; engine derives from type + horizon when null.
+  riskOverride          RiskTolerance?
+  /// Optional primary-purpose axis orthogonal to type+risk. Null = engine
+  /// picks per goal type. When set, narrows the candidate category list for
+  /// security recommendations but never overrides the tax-fitness logic.
+  strategy              GoalStrategy?
+  /// Day-trading style — only meaningful when type == DayTrading. Drives the
+  /// candidate scanner's fitScore weighting. Null for all buy-and-hold goals.
+  tradingStyle          TradingStyle?
+  /// DCA contribution schedule (funding method, orthogonal to goal type).
+  /// NOTE: distinct from the `contributions GoalPosition[]` relation below,
+  /// which is LINKED POSITIONS, not scheduled cash contributions.
+  contributionAmountCad Decimal?
+  contributionFrequency ContributionFrequency?
+  contributionStartDate DateTime?
+  /// Primary account funding the goal. Null = engine picks. SetNull (not
+  /// Restrict) so deleting the account just unlinks the goal.
+  accountId             Int?
+  account               Account?               @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  archivedAt            DateTime?
+  offTrackAlertedAt     DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  contributions         GoalPosition[]
+  snapshots             GoalSnapshot[]
+
+  @@index([type])
+  @@index([archivedAt])
+  @@index([accountId])
+}
+
+/// Many-to-many between Goal and Position. allocation = fraction of the
+/// position's market value that counts toward this goal (0.0..1.0). Engine
+/// warns when the sum across goals for a positionId exceeds 1.0.
+model GoalPosition {
+  goalId     Int
+  positionId Int
+  allocation Decimal  @default(1.0)
+  createdAt  DateTime @default(now())
+  goal       Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@id([goalId, positionId])
+  @@index([positionId])
+}
+
+/// Daily progress snapshot. Written nightly by the worker so the dashboard
+/// can render trailing progress charts without re-querying every position.
+model GoalSnapshot {
+  id        Int      @id @default(autoincrement())
+  goalId    Int
+  date      DateTime @db.Date
+  valueCad  Decimal
+  /// Sum of remaining contribution room across accounts hosting the goal.
+  /// Null when no account has a defined room.
+  roomCad   Decimal?
+  onTrack   Boolean?
+  createdAt DateTime @default(now())
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, date])
+  @@index([goalId])
+  @@index([date])
+}
+
+enum GoalType {
+  Withdrawal
+  DownPayment
+  Vacation
+  TaxBill
+  EmergencyFund
+  Income
+  Retirement
+  Education
+  Custom
+  // Fundamentally different from buy-and-hold goals: inverted account logic
+  // (non-registered only — CRA reclassifies frequent registered-account
+  // trading as business income), a candidate scanner instead of curated ETFs,
+  // and a prominent risk disclaimer. Additive — existing rows untouched.
+  DayTrading
+}
+
+// Day-trading style picked on a DayTrading goal. Drives the candidate
+// scanner's per-style fitScore weighting in dayTradeScanner.ts.
+enum TradingStyle {
+  Momentum
+  Breakout
+  ORB
+  MeanReversion
+  Scalping
+}
+
+enum RiskTolerance {
+  VeryLow
+  Low
+  Moderate
+  High
+  Aggressive
+}
+
+enum ContributionFrequency {
+  Weekly
+  Biweekly
+  Monthly
+  Quarterly
+}
+
+enum GoalStrategy {
+  Income
+  Growth
+  Balanced
+  Preservation
+}
+
+enum SecurityCategory {
+  CashEquivalent
+  ShortTermBond
+  IntermediateBond
+  DividendCanadian
+  DividendUS
+  EquityCanadian
+  EquityUS
+  EquityInternational
+  EquityEmerging
+  AllEquity
+  Balanced
+  Growth
+  REIT
+  Speculative
+  Other
+  // Phase 18 — tax-aware aggressive picks. LeveragedETF for 2x/3x products
+  // (TQQQ/SOXL), SectorEquity for single-sector ETFs (SMH/XBI/ARKK), IndividualStock
+  // for single-name picks (NVDA/RY.TO/etc.), CryptoAdjacent for BTC/ETH ETFs.
+  // All additive — existing rows untouched.
+  LeveragedETF
+  SectorEquity
+  IndividualStock
+  CryptoAdjacent
+  // High-yield-high-risk tier: covered-call ETFs (JEPI/QQQI/ZWB), BDCs
+  // (MAIN/ARCC), and high-yield credit (HYG/JNK). One category keeps the enum
+  // simple — per-security navErosionRisk metadata in securityPool.ts
+  // distinguishes sustainable spread-based income from leveraged yield traps.
+  // YieldMax-style single-stock synthetic covered-call ETFs are NEVER added
+  // here (see YIELD_TRAP_BLOCKLIST). Additive — existing rows untouched.
+  CoveredCall
+}

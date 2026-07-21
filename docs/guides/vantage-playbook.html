@@ -1,0 +1,3089 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vantage — Complete Guide</title>
+    <style>
+      :root {
+        --bg: #0b0c0e;
+        --surface: #15171c;
+        --inset: #1c1f25;
+        --border: #2a2e36;
+        --tx: #e8eaf0;
+        --mut: #a6acba;
+        --faint: #717784;
+        --emerald: #34d399;
+        --emerald-dim: #0f5132;
+        --sky: #56c5f5;
+        --sky-dim: #0c4a6e;
+        --amber: #fbbf24;
+        --rose: #fb7185;
+        --rose-dim: #5a1e2a;
+        --violet: #a78bfa;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 50% -10%, #14171d 0%, var(--bg) 55%);
+        color: var(--tx);
+        font:
+          16px/1.65 system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        padding: 0 18px 90px;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+      }
+      header.top {
+        padding: 54px 0 26px;
+        text-align: center;
+      }
+      header.top .kicker {
+        font: 600 12px/1 var(--mono);
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--violet);
+        margin-bottom: 14px;
+      }
+      header.top h1 {
+        font-size: 40px;
+        line-height: 1.1;
+        margin: 0 0 10px;
+        letter-spacing: -0.02em;
+      }
+      header.top p {
+        color: var(--mut);
+        max-width: 560px;
+        margin: 0 auto;
+        font-size: 16.5px;
+      }
+      .toc {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 24px;
+        flex-wrap: wrap;
+      }
+      .toc a {
+        text-decoration: none;
+        font: 600 13px/1 system-ui;
+        color: var(--tx);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 9px 16px;
+        border-radius: 999px;
+        transition: 0.15s;
+      }
+      .toc a:hover {
+        border-color: var(--violet);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      .toc a .dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+
+      section {
+        margin-top: 46px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 8px;
+      }
+      .sec-head .bar {
+        width: 5px;
+        height: 34px;
+        border-radius: 3px;
+      }
+      .sec-head h2 {
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+      .sec-sub {
+        color: var(--mut);
+        margin: 0 0 22px;
+        font-size: 15.5px;
+      }
+      .emerald .bar {
+        background: var(--emerald);
+      }
+      .emerald h2 .tag {
+        color: var(--emerald);
+      }
+      .rose .bar {
+        background: var(--rose);
+      }
+      .rose h2 .tag {
+        color: var(--rose);
+      }
+      .sky .bar {
+        background: var(--sky);
+      }
+      .sky h2 .tag {
+        color: var(--sky);
+      }
+      .violet .bar {
+        background: var(--violet);
+      }
+      .violet h2 .tag {
+        color: var(--violet);
+      }
+      .amber .bar {
+        background: var(--amber);
+      }
+      .amber h2 .tag {
+        color: var(--amber);
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px 24px;
+        margin: 16px 0;
+      }
+      .card h3 {
+        margin: 0 0 10px;
+        font-size: 17px;
+      }
+      .card p {
+        margin: 0 0 10px;
+        color: #d6dae3;
+      }
+      .card p:last-child {
+        margin-bottom: 0;
+      }
+      .lead {
+        font-size: 17px;
+        color: #dde1e9;
+      }
+      h3.sub {
+        margin: 26px 0 4px;
+        font-size: 18px;
+      }
+
+      .callout {
+        border-radius: 13px;
+        padding: 18px 20px;
+        margin: 16px 0;
+        border: 1px solid;
+        position: relative;
+      }
+      .callout .lbl {
+        font: 700 11px/1 var(--mono);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 9px;
+        display: block;
+      }
+      .callout p {
+        margin: 0;
+        color: #e3e6ee;
+        font-size: 15px;
+      }
+      .callout p + p {
+        margin-top: 9px;
+      }
+      .callout.good {
+        background: linear-gradient(180deg, rgba(52, 211, 153, 0.07), rgba(52, 211, 153, 0.02));
+        border-color: #1f5e44;
+      }
+      .callout.good .lbl {
+        color: var(--emerald);
+      }
+      .callout.warn {
+        background: linear-gradient(180deg, rgba(251, 113, 133, 0.08), rgba(251, 113, 133, 0.02));
+        border-color: var(--rose-dim);
+      }
+      .callout.warn .lbl {
+        color: var(--rose);
+      }
+      .callout.info {
+        background: linear-gradient(180deg, rgba(86, 197, 245, 0.07), rgba(86, 197, 245, 0.02));
+        border-color: var(--sky-dim);
+      }
+      .callout.info .lbl {
+        color: var(--sky);
+      }
+
+      ol.steps {
+        list-style: none;
+        counter-reset: s;
+        padding: 0;
+        margin: 6px 0 0;
+      }
+      ol.steps li {
+        counter-increment: s;
+        position: relative;
+        padding: 0 0 18px 50px;
+        border-left: 2px solid var(--border);
+        margin-left: 16px;
+      }
+      ol.steps li:last-child {
+        border-left-color: transparent;
+        padding-bottom: 0;
+      }
+      ol.steps li::before {
+        content: counter(s);
+        position: absolute;
+        left: -15px;
+        top: -2px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--inset);
+        border: 1px solid var(--border);
+        color: var(--tx);
+        font: 700 14px/30px system-ui;
+        text-align: center;
+      }
+      ol.steps li b {
+        color: #fff;
+      }
+      ol.steps.em li::before {
+        border-color: var(--emerald-dim);
+        color: var(--emerald);
+      }
+      ol.steps.ro li::before {
+        border-color: var(--rose-dim);
+        color: var(--rose);
+      }
+      ol.steps.sk li::before {
+        border-color: var(--sky-dim);
+        color: var(--sky);
+      }
+      ol.steps.vi li::before {
+        border-color: #3b2f63;
+        color: var(--violet);
+      }
+      ol.steps li .t {
+        font-weight: 600;
+        color: #fff;
+        display: block;
+        margin-bottom: 2px;
+      }
+      ol.steps li .d {
+        color: var(--mut);
+        font-size: 14.5px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 6px;
+      }
+      .metric {
+        background: var(--inset);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 14px 16px;
+      }
+      .metric .m-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 5px;
+      }
+      .metric .name {
+        font: 700 14px var(--mono);
+        color: #fff;
+      }
+      .metric .want {
+        font: 600 10.5px/1 var(--mono);
+        letter-spacing: 0.04em;
+        padding: 3px 7px;
+        border-radius: 6px;
+      }
+      .want.hi {
+        background: rgba(52, 211, 153, 0.13);
+        color: var(--emerald);
+      }
+      .want.lo {
+        background: rgba(251, 113, 133, 0.13);
+        color: var(--rose);
+      }
+      .want.ctx {
+        background: rgba(86, 197, 245, 0.13);
+        color: var(--sky);
+      }
+      .metric .desc {
+        font-size: 13.5px;
+        color: var(--mut);
+        margin: 0;
+      }
+
+      figure {
+        margin: 18px 0 6px;
+        background: var(--inset);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 16px 8px;
+      }
+      figure svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      figcaption {
+        color: var(--faint);
+        font-size: 13px;
+        text-align: center;
+        padding: 10px 8px 4px;
+      }
+      .svg-mono {
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .svg-lbl {
+        font-family: system-ui;
+        font-size: 12.5px;
+      }
+
+      .ex {
+        background: var(--inset);
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin: 14px 0;
+      }
+      .ex .tag {
+        font: 700 11px/1 var(--mono);
+        letter-spacing: 0.16em;
+        color: var(--amber);
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 9px;
+      }
+      .ex table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14.5px;
+      }
+      .ex td {
+        padding: 5px 0;
+        color: #d6dae3;
+      }
+      .ex td:last-child {
+        text-align: right;
+        font-family: var(--mono);
+        color: #fff;
+      }
+      .ex tr.hl td {
+        border-top: 1px solid var(--border);
+        padding-top: 9px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .ex tr.hl td:last-child {
+        color: var(--emerald);
+      }
+
+      .levers {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 6px;
+      }
+      .lever {
+        background: var(--inset);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 15px;
+        text-align: center;
+      }
+      .lever .ic {
+        font: 700 22px var(--mono);
+        color: var(--sky);
+        margin-bottom: 6px;
+      }
+      .lever .h {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 3px;
+      }
+      .lever .s {
+        font-size: 13px;
+        color: var(--mut);
+      }
+
+      code {
+        font-family: var(--mono);
+        font-size: 13.5px;
+        background: var(--inset);
+        border: 1px solid var(--border);
+        padding: 1.5px 6px;
+        border-radius: 6px;
+        color: #dfe3ea;
+      }
+      .chat-q {
+        font-family: var(--mono);
+        font-size: 13.5px;
+        color: var(--sky);
+        background: rgba(86, 197, 245, 0.07);
+        border-left: 3px solid var(--sky);
+        padding: 9px 14px;
+        border-radius: 0 8px 8px 0;
+        margin: 8px 0;
+      }
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 14px 0 6px;
+      }
+      .pill {
+        font: 600 12px/1 var(--mono);
+        padding: 6px 11px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--inset);
+        color: var(--mut);
+      }
+      .pill b {
+        color: #fff;
+        font-weight: 700;
+      }
+      footer {
+        margin-top: 54px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+        color: var(--faint);
+        font-size: 13px;
+        text-align: center;
+      }
+      .toplink {
+        text-align: center;
+        margin-top: 26px;
+      }
+      .toplink a {
+        color: var(--faint);
+        font: 600 12px var(--mono);
+        text-decoration: none;
+        letter-spacing: 0.04em;
+      }
+      .toplink a:hover {
+        color: var(--violet);
+      }
+      @media (max-width: 620px) {
+        .grid,
+        .levers {
+          grid-template-columns: 1fr;
+        }
+        header.top h1 {
+          font-size: 32px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top" id="top">
+        <div class="kicker">Vantage — Complete Guide</div>
+        <h1>Every feature, explained</h1>
+        <p>
+          What each tool does, how to use it, and why it helps. Built for your setup — Canadian,
+          Wealthsimple, commission-free. Advisory only: Vantage never places trades.
+        </p>
+        <nav class="toc">
+          <a href="#goals"
+            ><span class="dot" style="background: var(--emerald)"></span>Goals &amp; DCA</a
+          >
+          <a href="#day"><span class="dot" style="background: var(--rose)"></span>Day Trading</a>
+          <a href="#chat"><span class="dot" style="background: var(--sky)"></span>Chat Assistant</a>
+          <a href="#discovery"
+            ><span class="dot" style="background: var(--violet)"></span>Discovery</a
+          >
+          <a href="#compare"
+            ><span class="dot" style="background: var(--amber)"></span>Compare &amp; Watchlist</a
+          >
+          <a href="#accounts"
+            ><span class="dot" style="background: var(--emerald)"></span>Accounts &amp; Tax</a
+          >
+          <a href="#alerts"
+            ><span class="dot" style="background: var(--sky)"></span>Alerts &amp; Digests</a
+          >
+          <a href="#portfolio"
+            ><span class="dot" style="background: var(--violet)"></span>Portfolio Tools</a
+          >
+        </nav>
+      </header>
+
+      <!-- ============================================================ -->
+      <!-- ============================ GOALS & DCA =================== -->
+      <!-- ============================================================ -->
+      <section id="goals" class="emerald">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Goals &amp; DCA <span class="tag">— the planning engine</span></h2>
+        </div>
+        <p class="sec-sub">
+          A goal is a target dollar amount, an optional date, and a risk/strategy setting. From
+          those few inputs Vantage works out the right <b>account</b>, the right <b>securities</b>,
+          the target <b>asset mix</b>, and — once you add a contribution plan — whether you'll
+          actually get there.
+        </p>
+
+        <div class="card">
+          <p class="lead">
+            Create a goal like <b>“Down Payment 2027, $20,000”</b>. The engine reads four things —
+            goal <b>type</b>, <b>time horizon</b>, <b>risk</b>, and <b>strategy</b> — and turns them
+            into a concrete plan: which Wealthsimple account to fund it from (tax-aware), the top
+            ETFs to buy, a cash/bond/equity glide target, and a live on-track / shortfall badge.
+          </p>
+        </div>
+
+        <h3 class="sub">The four inputs that drive every recommendation</h3>
+        <div class="grid">
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">TYPE</span><span class="want ctx">WHAT FOR</span>
+            </div>
+            <p class="desc">
+              Withdrawal, DownPayment, Vacation, TaxBill, EmergencyFund, Income, Retirement,
+              Education, Custom, or DayTrading. Sets the default behaviour.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">HORIZON</span><span class="want ctx">HOW SOON</span>
+            </div>
+            <p class="desc">
+              Years to the target date. Short horizons automatically de-risk toward cash; long
+              horizons allow more equity.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">RISK</span><span class="want ctx">SLIDER</span>
+            </div>
+            <p class="desc">
+              VeryLow → Low → Moderate → High → Aggressive. Leave it on auto (horizon-derived) or
+              set it explicitly to override.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">STRATEGY</span><span class="want ctx">PURPOSE</span>
+            </div>
+            <p class="desc">
+              Income, Growth, Balanced, or Preservation. Optional overlay that biases the security
+              mix without touching the tax logic.
+            </p>
+          </div>
+        </div>
+
+        <figure>
+          <!-- Goals 4-axis recommendation flow -->
+          <svg viewBox="0 0 680 360" role="img" aria-label="How a goal becomes a recommendation">
+            <!-- four input chips -->
+            <g>
+              <rect x="20" y="24" width="120" height="34" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="80" y="45" text-anchor="middle" class="svg-mono" fill="#56c5f5">Type</text>
+              <rect x="20" y="70" width="120" height="34" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="80" y="91" text-anchor="middle" class="svg-mono" fill="#56c5f5">
+                Horizon
+              </text>
+              <rect x="20" y="116" width="120" height="34" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="80" y="137" text-anchor="middle" class="svg-mono" fill="#56c5f5">Risk</text>
+              <rect x="20" y="162" width="120" height="34" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="80" y="183" text-anchor="middle" class="svg-mono" fill="#56c5f5">
+                Strategy
+              </text>
+            </g>
+            <!-- arrows into engine -->
+            <path d="M140,41 L214,90" stroke="#34d399" stroke-width="1.5" fill="none" />
+            <path d="M140,87 L214,100" stroke="#34d399" stroke-width="1.5" fill="none" />
+            <path d="M140,133 L214,116" stroke="#34d399" stroke-width="1.5" fill="none" />
+            <path d="M140,179 L214,126" stroke="#34d399" stroke-width="1.5" fill="none" />
+            <!-- engine -->
+            <rect
+              x="216"
+              y="74"
+              width="150"
+              height="78"
+              rx="11"
+              fill="rgba(52,211,153,.08)"
+              stroke="#1f5e44"
+            />
+            <text
+              x="291"
+              y="104"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              Goals engine
+            </text>
+            <text x="291" y="124" text-anchor="middle" class="svg-mono" fill="#a6acba">
+              pure, deterministic
+            </text>
+            <!-- four outputs -->
+            <path d="M366,90 L440,52" stroke="#a6acba" stroke-width="1.5" fill="none" />
+            <path d="M366,108 L440,116" stroke="#a6acba" stroke-width="1.5" fill="none" />
+            <path d="M366,126 L440,180" stroke="#a6acba" stroke-width="1.5" fill="none" />
+            <path d="M366,140 L440,244" stroke="#a6acba" stroke-width="1.5" fill="none" />
+            <g>
+              <rect x="442" y="34" width="216" height="38" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="456" y="58" class="svg-mono" fill="#34d399">Best account (tax-aware)</text>
+              <rect x="442" y="98" width="216" height="38" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="456" y="122" class="svg-mono" fill="#34d399">
+                Top securities + fit score
+              </text>
+              <rect
+                x="442"
+                y="162"
+                width="216"
+                height="38"
+                rx="8"
+                fill="#1c1f25"
+                stroke="#2a2e36"
+              />
+              <text x="456" y="186" class="svg-mono" fill="#34d399">Glide mix (cash/bond/eq)</text>
+              <rect
+                x="442"
+                y="226"
+                width="216"
+                height="38"
+                rx="8"
+                fill="#1c1f25"
+                stroke="#2a2e36"
+              />
+              <text x="456" y="250" class="svg-mono" fill="#34d399">Progress + projection</text>
+            </g>
+            <!-- conflict detector note -->
+            <text x="339" y="300" text-anchor="middle" class="svg-lbl" fill="#717784">
+              A conflict detector runs across all goals — flags account-room shortfalls,
+            </text>
+            <text x="339" y="318" text-anchor="middle" class="svg-lbl" fill="#717784">
+              over-allocated positions, horizon mismatches, and risk-vs-horizon overrides.
+            </text>
+          </svg>
+          <figcaption>
+            Four small inputs, four concrete outputs. The engine is a pure function — change the
+            slider and the whole recommendation visibly reshuffles, with no guesswork.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">How to use it</h3>
+        <ol class="steps em">
+          <li>
+            <span class="t">Create the goal</span
+            ><span class="d"
+              >Goals tab → set a <b>name</b>, <b>type</b>, <b>target amount</b>, and (usually) a
+              <b>target date</b>.</span
+            >
+          </li>
+          <li>
+            <span class="t">Pick risk + strategy — or leave them auto</span
+            ><span class="d"
+              >Auto derives risk from the horizon. Set them explicitly to take control (see the
+              override note below).</span
+            >
+          </li>
+          <li>
+            <span class="t">Read the recommendation</span
+            ><span class="d"
+              >The goal shows the best account with a one-line tax rationale, the top securities —
+              each with a <b>continuous fit score</b> (real MER, yield, and discovery signal folded
+              in, so near-identical ETFs still rank apart) and a one-line reason — and the
+              glide-path bar.</span
+            >
+          </li>
+          <li>
+            <span class="t">Link your real holdings</span
+            ><span class="d"
+              >Attach existing positions at an allocation %, so progress reflects what you actually
+              own.</span
+            >
+          </li>
+          <li>
+            <span class="t">Add a DCA plan</span
+            ><span class="d"
+              >A recurring contribution turns backward-looking progress into a forward projection
+              (next section).</span
+            >
+          </li>
+        </ol>
+
+        <h3 class="sub">Risk &amp; strategy: what each setting actually does</h3>
+        <div class="card">
+          <p>
+            <b>Risk tolerance</b> sets the base palette of security categories and the target glide
+            mix. On auto, a sub-1-year goal is VeryLow (cash), 1–3yr Low, 3–7yr Moderate, 7–15yr
+            High, 15yr+ Aggressive. EmergencyFund is always cash-locked by definition.
+          </p>
+          <p>
+            <b>Strategy</b> is an optional overlay that sits on top: <b>Income</b> biases to vetted
+            monthly payers, <b>Growth</b> drops dividend-flavoured picks and tilts to broad-equity +
+            growth, <b>Balanced</b> guarantees a mix across dividend / growth / bond sleeves, and
+            <b>Preservation</b> forces cash + short bonds regardless of type. Strategy never
+            overrides the tax logic; that stays automatic.
+          </p>
+          <p>
+            <b>Income uses risk as a hard product gate, not a cosmetic score boost.</b> The minimum
+            monthly yield is 2.5% for VeryLow, 3% for Low, 5% for Moderate, 6.5% for High, and 8%
+            for Aggressive. Each product also has a minimum safe tier, so a leveraged credit fund
+            cannot leak into a Low-risk goal just because its yield is high. Discovery uses this
+            exact same contract. Goals and Discovery also use the same yield input: a
+            <b>TTM yield</b> badge means provider metrics were available, while <b>Est yield</b>
+            means the reviewed fallback was used. The fallback is never presented as live data.
+          </p>
+        </div>
+
+        <div class="callout warn">
+          <span class="lbl">Explicit risk beats horizon — with an honest warning</span>
+          <p>
+            By default the horizon de-risks a near-dated goal to cash. But if you
+            <b>explicitly set</b> a risk level, that conscious choice <b>wins</b> over the automatic
+            de-risking — Vantage gives you the palette your risk + strategy imply rather than
+            silently overruling you.
+          </p>
+          <p>
+            The trade-off is surfaced, not hidden: set (say) Aggressive on a goal due in under 3
+            years and the engine raises a <b>risk-vs-horizon warning</b> — “these holdings can swing
+            20–30%+ before your target date — that's the risk you're accepting with money you may
+            need soon.” It only fires when your override is materially above what the horizon would
+            pick (≥ 2 tiers up). EmergencyFund is the one exception — it stays cash-locked
+            regardless.
+          </p>
+        </div>
+
+        <h3 class="sub">The glide path</h3>
+        <p style="color: var(--mut); margin: 0 0 6px; font-size: 15px">
+          Every goal has a target cash/bond/equity split for its risk tier. As a goal nears its date
+          (inside ~2 years) it automatically glides toward cash — unless you've set an explicit
+          override. The goal page shows your <em>actual</em> equity weight versus this target and
+          nudges you to add growth or trim risk.
+        </p>
+        <figure>
+          <!-- Glide path: equity declining to cash as target nears -->
+          <svg viewBox="0 0 680 250" role="img" aria-label="Glide path mix by horizon">
+            <line x1="64" y1="30" x2="64" y2="200" stroke="#2a2e36" stroke-width="1.5" />
+            <line x1="64" y1="200" x2="640" y2="200" stroke="#2a2e36" stroke-width="1.5" />
+            <!-- equity band (top, shrinking) -->
+            <path
+              d="M64,46 C260,52 430,150 640,188 L640,200 L64,200 Z"
+              fill="#34d399"
+              opacity="0.16"
+            />
+            <path
+              d="M64,46 C260,52 430,150 640,188"
+              fill="none"
+              stroke="#34d399"
+              stroke-width="2.5"
+            />
+            <!-- bond band line -->
+            <path
+              d="M64,120 C260,124 430,176 640,196"
+              fill="none"
+              stroke="#56c5f5"
+              stroke-width="2"
+              stroke-dasharray="6 4"
+            />
+            <text x="120" y="78" class="svg-mono" fill="#34d399">equity</text>
+            <text x="150" y="150" class="svg-mono" fill="#56c5f5">bonds</text>
+            <text x="500" y="184" class="svg-mono" fill="#a6acba">cash</text>
+            <!-- x labels -->
+            <text x="80" y="220" class="svg-lbl" fill="#717784">15yr+ out</text>
+            <text x="640" y="220" text-anchor="end" class="svg-lbl" fill="#717784">
+              target date
+            </text>
+            <text x="352" y="240" text-anchor="middle" class="svg-lbl" fill="#717784">
+              time to goal → shrinks
+            </text>
+          </svg>
+          <figcaption>
+            A long-dated Aggressive goal sits ~100% equity; the same goal one year out glides to
+            cash. The projection prices growth off this <em>actual</em> mix, so a near-dated goal
+            isn't optimistically projected at an all-equity rate.
+          </figcaption>
+        </figure>
+
+        <!-- ---------------- DCA sub-section (preserved + folded in) ---------------- -->
+        <h3 class="sub" style="margin-top: 34px">Dollar-Cost Averaging — the patient game</h3>
+        <p class="sec-sub" style="margin-bottom: 14px">
+          Investing a fixed dollar amount on a schedule, no matter the price. In Vantage it's a
+          contribution plan you attach to any buy-and-hold goal — and it's what lets a goal project
+          <em>forward</em> instead of just tracking where you've been.
+        </p>
+
+        <div class="card">
+          <p class="lead">
+            You set <b>“$X every two weeks”</b> and the app does the rest: it compounds your
+            contributions at your goal's expected return, draws the path to your target date, and
+            tells you whether you'll actually make it — or how much more per cheque you'd need.
+          </p>
+        </div>
+
+        <div class="callout good">
+          <span class="lbl">The honest truth</span>
+          <p>
+            Lump-sum investing beats DCA about <b>two-thirds of the time</b> historically — markets
+            rise more often than they fall, so money in sooner usually wins. DCA's real edge isn't
+            higher returns; it's <b>discipline and lower regret</b>: you keep buying through dips
+            instead of trying (and failing) to time the bottom. For steady paycheque investing,
+            that's exactly the point.
+          </p>
+        </div>
+
+        <div class="callout info">
+          <span class="lbl">Where the return numbers come from</span>
+          <p>
+            The projection isn't an invented rate. It blends the
+            <b>FP Canada / Institute of Financial Planning 2026 Projection Assumption Guidelines</b>
+            — the standard Canadian planners use — by your goal's cash/bond/equity mix, then
+            subtracts a conservative 0.20% all-in ETF fee. Net nominal rates run from ~2.2% (all
+            cash) to ~6.28% (all equity). The rate shown is the one the engine actually used.
+          </p>
+        </div>
+
+        <h3 class="sub">How to use it</h3>
+        <ol class="steps em">
+          <li>
+            <span class="t">Open or create a buy-and-hold goal</span
+            ><span class="d"
+              >Goals tab → e.g. your <b>Down Payment 2027</b>. Any goal that isn't Day
+              Trading.</span
+            >
+          </li>
+          <li>
+            <span class="t">Set the contribution plan</span
+            ><span class="d"
+              >Add an <b>amount</b>, a <b>frequency</b> (weekly / biweekly / monthly / quarterly),
+              and a <b>start date</b>.</span
+            >
+          </li>
+          <li>
+            <span class="t">Read the projection</span
+            ><span class="d"
+              >The goal now shows a projected value at your target date, an on-track / shortfall
+              badge, and the dashed forward line on the glide chart.</span
+            >
+          </li>
+          <li>
+            <span class="t">Act on the nudge</span
+            ><span class="d"
+              >If you're short, it tells you the exact amount to raise each contribution to. Bump it
+              — or accept the later finish.</span
+            >
+          </li>
+          <li>
+            <span class="t">Follow the split</span
+            ><span class="d"
+              >Each contribution is carved across the ETFs the goal recommends, by weight — so you
+              know exactly what to buy in Wealthsimple.</span
+            >
+          </li>
+        </ol>
+
+        <figure>
+          <!-- DCA glide chart -->
+          <svg viewBox="0 0 680 330" role="img" aria-label="DCA projection chart">
+            <defs>
+              <linearGradient id="proj" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#56c5f5" stop-opacity="0.28" />
+                <stop offset="100%" stop-color="#56c5f5" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <!-- axes -->
+            <line x1="64" y1="40" x2="64" y2="270" stroke="#2a2e36" stroke-width="1.5" />
+            <line x1="64" y1="270" x2="640" y2="270" stroke="#2a2e36" stroke-width="1.5" />
+            <!-- target line -->
+            <line
+              x1="64"
+              y1="70"
+              x2="640"
+              y2="70"
+              stroke="#34d399"
+              stroke-width="1.5"
+              stroke-dasharray="5 5"
+            />
+            <text x="636" y="62" text-anchor="end" class="svg-mono" fill="#34d399">
+              $20,000 target
+            </text>
+            <!-- contributions+growth area -->
+            <path d="M120,256 C260,238 430,196 640,150 L640,270 L120,270 Z" fill="url(#proj)" />
+            <!-- actual so far (solid) -->
+            <path
+              d="M120,256 L150,252"
+              fill="none"
+              stroke="#e8eaf0"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+            <circle cx="120" cy="256" r="4" fill="#e8eaf0" />
+            <!-- projected (dashed) -->
+            <path
+              d="M150,252 C300,236 470,194 640,150"
+              fill="none"
+              stroke="#56c5f5"
+              stroke-width="3"
+              stroke-dasharray="7 5"
+              stroke-linecap="round"
+            />
+            <circle cx="640" cy="150" r="4.5" fill="#56c5f5" />
+            <!-- shortfall bracket -->
+            <line x1="612" y1="70" x2="612" y2="150" stroke="#fbbf24" stroke-width="1.5" />
+            <line x1="607" y1="70" x2="617" y2="70" stroke="#fbbf24" stroke-width="1.5" />
+            <line x1="607" y1="150" x2="617" y2="150" stroke="#fbbf24" stroke-width="1.5" />
+            <text x="600" y="114" text-anchor="end" class="svg-mono" fill="#fbbf24">
+              ~$5.5k short
+            </text>
+            <!-- point labels -->
+            <text x="120" y="248" text-anchor="middle" class="svg-mono" fill="#a6acba">
+              $988 today
+            </text>
+            <text x="640" y="168" text-anchor="end" class="svg-mono" fill="#56c5f5">
+              proj. $14,452
+            </text>
+            <!-- x labels -->
+            <text x="120" y="286" text-anchor="middle" class="svg-lbl" fill="#717784">Today</text>
+            <text x="640" y="286" text-anchor="end" class="svg-lbl" fill="#717784">Jun 2027</text>
+            <text x="350" y="305" text-anchor="middle" class="svg-lbl" fill="#56c5f5">
+              $500 biweekly, compounding →
+            </text>
+          </svg>
+          <figcaption>
+            Your real <b>Down Payment 2027</b> goal at $500 biweekly: the contributions + growth
+            (blue) land at ~$14.5k, short of the $20k target — so the app says bump to
+            <b>$707/biweekly</b> to close the gap.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">The only three levers</h3>
+        <div class="levers">
+          <div class="lever">
+            <div class="ic">$</div>
+            <div class="h">Amount</div>
+            <div class="s">More per contribution = faster, linearly.</div>
+          </div>
+          <div class="lever">
+            <div class="ic">&#8635;</div>
+            <div class="h">Frequency</div>
+            <div class="s">More often barely matters — consistency does.</div>
+          </div>
+          <div class="lever">
+            <div class="ic">&#9201;</div>
+            <div class="h">Time</div>
+            <div class="s">
+              The big one. Compounding rewards starting early far more than adding more.
+            </div>
+          </div>
+        </div>
+
+        <div class="ex">
+          <span class="tag">Worked example — Down Payment 2027</span>
+          <table>
+            <tr>
+              <td>Current value</td>
+              <td>$988</td>
+            </tr>
+            <tr>
+              <td>Plan</td>
+              <td>$500 / biweekly</td>
+            </tr>
+            <tr>
+              <td>Target by Jun 2027</td>
+              <td>$20,000</td>
+            </tr>
+            <tr>
+              <td>Projected at target</td>
+              <td>$14,452</td>
+            </tr>
+            <tr class="hl">
+              <td>To actually hit it &rarr;</td>
+              <td>$707 / biweekly</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ============================ DAY TRADING =================== -->
+      <!-- ============================================================ -->
+      <section id="day" class="rose">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Day Trading <span class="tag">— the prescriptive scanner</span></h2>
+        </div>
+        <p class="sec-sub">
+          A <b>DayTrading</b> goal turns the page into a <b>prescriptive trade-plan builder</b>.
+          It's no longer “here's a watchlist, go do your own analysis” — each candidate now carries
+          a concrete plan: a suggested <b>entry</b>, a hard <b>stop</b>, a <b>target</b>, and a
+          <b>position size</b> sized to risk ~1% of the goal's capital. Vantage still never places
+          the order — you execute it yourself in Wealthsimple — but the homework is done for you.
+        </p>
+
+        <div class="callout warn">
+          <span class="lbl">Reality check — read this first</span>
+          <p>
+            Each candidate has a suggested
+            <b>entry, a hard stop, a target, and a position size</b> sized to risk ~1% of the goal's
+            capital. <b>Execute the plan and honor the stop — it's non-negotiable.</b> This is still
+            speculation, not investing: only <b>~1–4% of day traders are profitable long-term</b>,
+            so treat every plan as a <b>hypothesis, not a guarantee</b>. The tool gives you a
+            disciplined structure; it can't give you an edge. One trade where you move the stop
+            erases five clean wins.
+          </p>
+        </div>
+
+        <div class="callout info">
+          <span class="lbl"
+            >Session-aware price, daily volatility — what's fresh and what isn't</span
+          >
+          <p>
+            The price is always the <b>freshest real print we hold</b>, labeled by the session it
+            came from and stamped in <b>ET</b>: <b>live</b> (green dot) during regular hours,
+            <b>pre-market</b> (04:00–09:30), <b>after-hours</b> (16:00–20:00), or <b>close</b> after
+            the bell. It <b>never</b> shows an older daily close when a newer print exists, and
+            <b>never</b> calls an hours-old print “live.” So overnight you'll see e.g.
+            <code>after-hours $6.32 · Tue 4:57 PM ET</code> rather than the prior day's close. The
+            trade-plan <b>entry</b> hangs off those current levels (break of today's high). Be
+            honest about the rest:
+            <b>ATR% and relative volume are still end-of-day daily readings</b> — and ATR% now also
+            shows its <b>dollar value</b> (e.g. <code>ATR 5.9% (≈$0.39)</code>) so you see the
+            literal range the stop and target are built from. Volatility <em>is</em> a daily
+            measure, so a lagging EOD bar is expected, not a bug. A loud staleness banner fires only
+            when the freshest <em>price</em> is itself more than a trading day old (market long
+            closed, no recent print). <b>One IEX caveat:</b> the free Alpaca feed is a single venue,
+            so extended-hours coverage is partial — thin names can have gaps before/after the bell,
+            in which case the last regular print carries over (labeled “close”). Full consolidated
+            extended-hours data needs the paid feed. The plan's levels are computed from those
+            inputs — they are not predictions.
+          </p>
+        </div>
+
+        <h3 class="sub">What every column means</h3>
+        <div class="grid">
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">PRICE / TODAY</span><span class="want ctx">SESSION-AWARE</span>
+            </div>
+            <p class="desc">
+              The freshest real print + today's % move (Alpaca, IEX), tagged by session —
+              <b>live</b> (green dot, regular hours), <b>pre-market</b>, <b>after-hours</b>, or
+              <b>close</b> — and stamped in ET. Never an older close when a newer print exists;
+              never “live” off-hours.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">ATR%</span><span class="want hi">WANT HIGH</span>
+            </div>
+            <p class="desc">
+              Typical <em>daily</em> move, as a % of price — the size of the stop and target — shown
+              with its <b>$ value</b> (e.g. <code>5.9% (≈$0.39)</code>). 6% on a $40 stock &asymp;
+              $2.40 of range. <em>End-of-day</em> reading. Names under ~2% are filtered out.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">RVOL</span><span class="want hi">WANT HIGH</span>
+            </div>
+            <p class="desc">
+              Latest daily volume vs its 30-day average. &gt;2&times; = unusual attention = it's
+              actually <em>in play</em>. Also an <em>end-of-day</em> reading, not today's intraday
+              tape.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">$-VOL</span><span class="want hi">WANT HIGH</span>
+            </div>
+            <p class="desc">
+              Liquidity. High = you get in and out instantly without slippage. Everything here
+              clears a $5M/day floor.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">CATALYST</span><span class="want ctx">THE “WHY”</span>
+            </div>
+            <p class="desc">
+              Earnings, an 8-K, news, an insider cluster — from the last 7 days. A move with a
+              catalyst has follow-through; one without is noise.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">AS OF</span><span class="want ctx">FRESHNESS</span>
+            </div>
+            <p class="desc">
+              The actual ET <em>trade time</em> of the displayed print (<code>HH:MM ET</code>, with
+              the weekday when it's not today) — green when live. A pure prior-close fallback shows
+              the bar date instead. A loud banner fires only when the freshest price is itself &gt;
+              1 trading day old.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top"><span class="name">FIT</span><span class="want ctx">RANK</span></div>
+            <p class="desc">
+              Composite 0–100 score for your chosen style. Higher = cleaner setup. Compare names
+              <em>within</em> a style only — a MeanReversion 50 and a Momentum 85 are both strong
+              for their style.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">THE PLAN</span><span class="want hi">TAP A ROW</span>
+            </div>
+            <p class="desc">
+              Tap any row to expand its <b>Entry / Hard stop / Target / Size</b> — the prescriptive
+              core. Every level is computed from ATR + recent bars + the 1%-risk rule.
+            </p>
+          </div>
+        </div>
+
+        <p style="color: var(--mut); margin: 14px 0 0; font-size: 14.5px">
+          Trade in your <b>Personal / Margin</b> account — gains are business income but losses are
+          deductible. <b>Not</b> a TFSA (CRA reclassification risk — see Accounts &amp; Tax). The
+          goal's account card ranks Personal/Margin first and warns loudly if you have no
+          non-registered account.
+        </p>
+
+        <h3 class="sub">
+          Five trading styles — each weights the signals <em>and</em> shapes the entry
+        </h3>
+        <div class="pill-row">
+          <span class="pill"
+            ><b>Momentum</b> — RVOL + catalyst + run · entry = break of today's high</span
+          >
+          <span class="pill"
+            ><b>Breakout</b> — near the highs + volume · entry = break of today's high</span
+          >
+          <span class="pill"
+            ><b>ORB</b> — opening-range: high ATR% + liquidity · entry = opening-range high</span
+          >
+          <span class="pill"
+            ><b>MeanReversion</b> — RSI extreme + room · entry = bounce near today's low</span
+          >
+          <span class="pill"
+            ><b>Scalping</b> — liquidity is everything · entry = current price, tight stop</span
+          >
+        </div>
+        <p style="color: var(--mut); margin: 6px 0 0; font-size: 14.5px">
+          Pick the style on the goal; the Fit score re-weights <em>and</em> the entry trigger
+          changes with it. Trend styles (Momentum/Breakout/ORB) get a wider
+          <b>1.5&times; ATR</b> stop so noise doesn't shake them out; MeanReversion and Scalping get
+          a tighter <b>1.0&times; ATR</b>. Scalping is honestly flagged in its own reason line —
+          most scalpers lose long-term.
+        </p>
+
+        <div class="callout info">
+          <span class="lbl">What the Fit score means — and what it doesn't</span>
+          <p>
+            Fit is a <b>0–100 per-style setup-quality score</b>, not a rating of the company and
+            <b>not a direction call</b>. For Momentum it's roughly <b>60% relative volume</b> + a
+            catalyst bonus + a little volatility — so the score answers “is this name
+            <em>in play</em> for this style today,” nothing more.
+          </p>
+          <p>
+            That means a <b>low score is a quiet/weak setup</b> (relative volume near 1&times;,
+            nothing moving), <b>not</b> a prediction the stock will drop. When the whole board is
+            sub-50, that's the honest signal: <b>no edge today — sit out.</b> The strong days look
+            different — the leaders print <b>70–80+</b> on
+            <b>3–5&times; volume plus a fresh catalyst</b>. Compare names <em>within</em> a style
+            only; a MeanReversion 50 and a Momentum 85 are each strong for their own style.
+          </p>
+        </div>
+
+        <h3 class="sub">The plan each candidate carries</h3>
+        <div class="card">
+          <p>Expand any row and you get four computed numbers, not a vibe:</p>
+          <div class="grid" style="margin-top: 12px">
+            <div class="metric">
+              <div class="m-top">
+                <span class="name">ENTRY</span><span class="want ctx">A LEVEL + TRIGGER</span>
+              </div>
+              <p class="desc">
+                A real intraday level — the <b>break of today's high</b> (Momentum/Breakout), the
+                opening-range high (ORB), a bounce near today's low (MeanReversion), or the current
+                price (Scalping). It sits within ~1–4% of the live price, never a stale multi-day
+                level while the market's open.
+              </p>
+            </div>
+            <div class="metric">
+              <div class="m-top">
+                <span class="name">STOP</span><span class="want lo">HARD · ATR-BASED</span>
+              </div>
+              <p class="desc">
+                <code>entry &minus; 1.0–1.5&times;ATR</code>, shown with the $ and % distance. This
+                is the line you do not move.
+              </p>
+            </div>
+            <div class="metric">
+              <div class="m-top">
+                <span class="name">TARGET</span><span class="want hi">+2R</span>
+              </div>
+              <p class="desc">
+                <code>entry + 2&times;risk</code> — a fixed 2:1 reward:risk. You can be right under
+                half the time and still net positive.
+              </p>
+            </div>
+            <div class="metric">
+              <div class="m-top">
+                <span class="name">SIZE</span><span class="want ctx">1% RISK</span>
+              </div>
+              <p class="desc">
+                From the 1%-risk rule: risk 1% of the goal's trading capital,
+                <code>shares = floor(1%-capital ÷ stop-distance)</code>. Shows the position $ and
+                the actual $-at-risk after rounding.
+              </p>
+            </div>
+          </div>
+          <p style="margin-top: 12px">
+            <b>The 0-share guardrail:</b> a pricey, volatile name can come back as <b>0 shares</b> —
+            that means one share's stop risk already exceeds your 1% budget. That's the rule
+            protecting you, not a glitch: skip the name, or widen your risk deliberately and
+            knowingly.
+          </p>
+        </div>
+
+        <h3 class="sub">How long do you hold? — exit timing</h3>
+        <div class="card">
+          <p>
+            The plan tells you <em>where</em> to get out; this tells you <em>when</em>. There's no
+            magic “ideal” hold time — you're out the moment the trade is <b>done</b>, <b>wrong</b>,
+            <b>stalled</b>, or the <b>day is ending</b>, whichever comes first. Four exit triggers,
+            in priority order:
+          </p>
+        </div>
+        <ol class="steps ro">
+          <li>
+            <span class="t">Target or stop — that's most of your exits</span
+            ><span class="d"
+              >These are your primary exits and they're already on the plan.
+              <b>Target hit → take the win.</b>
+              <b>Stop hit → out, no debate, no “let it come back.”</b> The vast majority of trades
+              end right here; the rest of this list is for the trade that does neither.</span
+            >
+          </li>
+          <li>
+            <span class="t">Time-stop — bail on a stalled trade</span
+            ><span class="d"
+              >If a momentum / breakout / ORB setup isn't following through
+              <b>~30–60 min after entry</b> — just chopping sideways, going nowhere — get out even
+              though it never hit the stop. A momentum trade that isn't moving is a
+              <b>failed setup</b>; don't tie up capital and risk waiting for a move that isn't
+              coming.</span
+            >
+          </li>
+          <li>
+            <span class="t">Flat by the close — always</span
+            ><span class="d"
+              >If neither stop nor target has triggered by <b>~3:50 PM ET</b>, close it anyway. No
+              exceptions. This is the line that keeps a <em>day</em> trade a day trade.</span
+            >
+          </li>
+        </ol>
+
+        <div class="callout warn">
+          <span class="lbl">No overnight holds — this is the defining rule</span>
+          <p>
+            Being <b>flat by the bell, every single day</b>, is what makes this day trading rather
+            than swing trading. Hold overnight and two things happen: the trade quietly
+            <b>becomes a swing trade</b> you never planned or sized for, <em>and</em> the stock can
+            <b>gap straight through your stop</b> on overnight news you can't react to — the order
+            doesn't fill at your stop, it fills wherever the open lands. Gapping through a stop on a
+            position that's suddenly too big is one of the
+            <b>top ways day traders blow up an account</b>. <b>Out by the close — every time.</b>
+          </p>
+        </div>
+
+        <p style="color: var(--mut); margin: 14px 0 0; font-size: 14.5px">
+          <b>Rough windows by style:</b> a <b>scalp</b> lasts seconds to minutes. A
+          <b>momentum / breakout / ORB</b> trade usually resolves in the <b>first 1–2 hours</b> — if
+          it hasn't moved by then it's probably dead money, so the time-stop applies. And
+          <b>nothing</b> is held past the close. <b>Shorter is better:</b> intraday edges decay
+          fast, so the longer you sit in a trade that isn't working, the less reason there is to
+          still be in it.
+        </p>
+
+        <h3 class="sub">Your morning routine</h3>
+        <ol class="steps ro">
+          <li>
+            <span class="t">Sort by Fit or RVOL</span
+            ><span class="d"
+              >Top 3–5 for your chosen style are the day's shortlist. Ignore the rest.</span
+            >
+          </li>
+          <li>
+            <span class="t">Check each catalyst</span
+            ><span class="d"
+              >Know why it's moving. No reason = skip it, however clean the plan looks.</span
+            >
+          </li>
+          <li>
+            <span class="t">Open the plan — it's already computed</span
+            ><span class="d"
+              >Tap the row: entry, hard stop, target, and a share count already sized to ~1% risk.
+              No spreadsheet, no eyeballing.</span
+            >
+          </li>
+          <li>
+            <span class="t">Execute it in Wealthsimple</span
+            ><span class="d"
+              >Place the entry, and set the <b>given stop and size</b> before you click buy. The
+              price/move are live; re-glance the tape, then act on the plan as written.</span
+            >
+          </li>
+          <li>
+            <span class="t">Walk away at your target or stop</span
+            ><span class="d"
+              >No “let it run,” no “wait for it to come back.” Honor the stop — it's
+              non-negotiable.</span
+            >
+          </li>
+        </ol>
+
+        <figure>
+          <!-- Trade anatomy / risk:reward -->
+          <svg viewBox="0 0 680 300" role="img" aria-label="Trade anatomy and risk reward">
+            <!-- reward zone -->
+            <rect x="64" y="70" width="430" height="80" fill="#34d399" opacity="0.10" />
+            <!-- risk zone -->
+            <rect x="64" y="150" width="430" height="40" fill="#fb7185" opacity="0.12" />
+            <!-- price line -->
+            <path
+              d="M64,178 L130,168 L180,184 L240,150 L300,158 L360,120 L420,128 L494,86"
+              fill="none"
+              stroke="#e8eaf0"
+              stroke-width="2.5"
+              stroke-linejoin="round"
+            />
+            <!-- levels -->
+            <line
+              x1="64"
+              y1="150"
+              x2="560"
+              y2="150"
+              stroke="#cbd0db"
+              stroke-width="1.5"
+              stroke-dasharray="5 4"
+            />
+            <line x1="64" y1="70" x2="560" y2="70" stroke="#34d399" stroke-width="1.5" />
+            <line x1="64" y1="190" x2="560" y2="190" stroke="#fb7185" stroke-width="1.5" />
+            <!-- labels right -->
+            <text x="568" y="74" class="svg-mono" fill="#34d399">TARGET $40.40</text>
+            <text x="568" y="154" class="svg-mono" fill="#cbd0db">ENTRY $40.00</text>
+            <text x="568" y="194" class="svg-mono" fill="#fb7185">STOP $39.80</text>
+            <!-- zone tags -->
+            <text x="80" y="98" class="svg-mono" fill="#34d399">REWARD +$0.40 / share</text>
+            <text x="80" y="176" class="svg-mono" fill="#fb7185">RISK &minus;$0.20 / share</text>
+            <!-- ratio -->
+            <text
+              x="278"
+              y="250"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#a6acba"
+              font-size="14"
+            >
+              reward : risk =
+            </text>
+            <text
+              x="360"
+              y="251"
+              text-anchor="start"
+              class="svg-mono"
+              fill="#34d399"
+              font-size="17"
+              font-weight="700"
+            >
+              2 : 1
+            </text>
+          </svg>
+          <figcaption>
+            Every trade needs three lines set in advance — entry, stop, target. Keep the reward zone
+            at least <b>twice</b> the risk zone. That ratio is the whole game.
+          </figcaption>
+        </figure>
+
+        <div class="ex">
+          <span class="tag"
+            >Worked example — the plan on a $40 momentum candidate ($25k capital)</span
+          >
+          <table>
+            <tr>
+              <td>Style &middot; today's high</td>
+              <td>Momentum &middot; $40.00</td>
+            </tr>
+            <tr>
+              <td>Entry — break of today's high</td>
+              <td>$40.00</td>
+            </tr>
+            <tr>
+              <td>ATR$ (6% of $40) &middot; 1.5&times; stop</td>
+              <td>$2.40 &middot; $3.60</td>
+            </tr>
+            <tr>
+              <td>Hard stop &minus;1.5&times;ATR</td>
+              <td>$36.40 (&minus;9.0%)</td>
+            </tr>
+            <tr>
+              <td>Target +2R</td>
+              <td>$47.20 (+$7.20)</td>
+            </tr>
+            <tr>
+              <td>Size = floor($250 ÷ $3.60)</td>
+              <td>69 sh &asymp; $2,760</td>
+            </tr>
+            <tr class="hl">
+              <td>$ at risk &rarr; reward (2:1)</td>
+              <td>~$248 &rarr; ~$497</td>
+            </tr>
+          </table>
+        </div>
+        <p style="color: var(--faint); margin: 8px 2px 0; font-size: 13px">
+          Illustrative — the app computes every number live off ATR + today's high + your goal's
+          capital. Note how a wide-ATR name eats most of the $250 risk budget in just 69 shares; a
+          pricier or more volatile name can fall to <b>0 shares</b> and the row tells you to skip
+          it.
+        </p>
+
+        <div class="card" style="margin-top: 18px">
+          <h3>The fine print the plan already handles</h3>
+          <p>
+            <b>The 1% rule is baked in:</b> on a $25k day-trade goal, the size is computed so the
+            stop risks ~<b>$250</b> (1%) — you don't do the math, the plan does. If a single share's
+            stop already exceeds that, the size is <b>0</b> by design.
+          </p>
+          <p>
+            <b>Currency caveat:</b> your capital is CAD; a US name's levels are USD. Shares are
+            sized USD-risk against the CAD budget 1:1 (a close approximation) — convert for an exact
+            position. The row discloses this.
+          </p>
+          <p>
+            <b>Wealthsimple is your secret weapon:</b> commission-free means a small target actually
+            survives. At a $10/trade broker, small day trades are dead on arrival.
+          </p>
+          <p>
+            <b>Tax:</b> in your Personal account, frequent-trading gains are
+            <b>business income</b> (100% inclusion at your marginal rate) — gross is well above net.
+            This is a grind, not a lottery.
+          </p>
+        </div>
+
+        <h3 class="sub">Let the chat work it with you</h3>
+        <p style="color: var(--mut); margin: 0 0 10px; font-size: 15px">
+          Once your Anthropic credits are topped up, paste these straight into the AI chat:
+        </p>
+        <div class="chat-q">
+          &ldquo;Why is [ticker] on my momentum list today — what's the catalyst, and is its plan
+          still valid on the live tape?&rdquo;
+        </div>
+        <div class="chat-q">
+          &ldquo;Compare the top 3 on my day-trade scanner — which plan has the cleanest entry and
+          the best reward:risk?&rdquo;
+        </div>
+        <div class="chat-q">
+          &ldquo;[ticker]'s plan came back as 0 shares — why, and what would I have to change to
+          take it?&rdquo;
+        </div>
+        <div class="chat-q">
+          &ldquo;Switch this goal to Breakout style.&rdquo; &middot; &ldquo;Add [ticker] to my
+          watchlist.&rdquo;
+        </div>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ============================ CHAT ASSISTANT ================ -->
+      <!-- ============================================================ -->
+      <section id="chat" class="sky">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Chat Assistant <span class="tag">— an analyst who knows your whole account</span></h2>
+        </div>
+        <p class="sec-sub">
+          An in-app chat backed by Claude that already has your entire Vantage context loaded —
+          portfolio, goals, watchlist, discovery scores, fundamentals, recent events, settings, and
+          the last few turns of the conversation. It can answer questions <em>and</em> make changes
+          for you, with a confirm step before anything is written.
+        </p>
+
+        <div class="card">
+          <p class="lead">
+            Ask it anything about your own data and it answers from context — never “I don't have
+            access to that.” Ask a factual question it can't answer from the database and it reaches
+            out to the web. Ask it to change something and it does the edit, showing you the
+            before&rarr;after first for anything destructive.
+          </p>
+        </div>
+
+        <figure>
+          <!-- Chat context + tools loop -->
+          <svg viewBox="0 0 680 380" role="img" aria-label="Chat context bundle and tool loop">
+            <!-- you -->
+            <rect x="20" y="168" width="96" height="44" rx="10" fill="#1c1f25" stroke="#2a2e36" />
+            <text
+              x="68"
+              y="195"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              You
+            </text>
+            <path
+              d="M116,190 L168,190"
+              stroke="#56c5f5"
+              stroke-width="1.5"
+              fill="none"
+              marker-end="url(#ah)"
+            />
+            <defs>
+              <marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#56c5f5" />
+              </marker>
+            </defs>
+            <!-- context bundle stack -->
+            <text x="262" y="34" text-anchor="middle" class="svg-mono" fill="#717784">
+              context bundle (auto-attached)
+            </text>
+            <g font-family="ui-monospace,monospace" font-size="11" fill="#a6acba">
+              <rect x="170" y="44" width="184" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="180" y="59">portfolio + accounts</text>
+              <rect x="170" y="70" width="184" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="180" y="85">goals + progress + picks</text>
+              <rect x="170" y="96" width="184" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="180" y="111">watchlist</text>
+              <rect
+                x="170"
+                y="122"
+                width="184"
+                height="22"
+                rx="5"
+                fill="#15171c"
+                stroke="#2a2e36"
+              />
+              <text x="180" y="137">discovery scores</text>
+              <rect
+                x="170"
+                y="148"
+                width="184"
+                height="22"
+                rx="5"
+                fill="#15171c"
+                stroke="#2a2e36"
+              />
+              <text x="180" y="163">ticker metrics + funds</text>
+              <rect
+                x="170"
+                y="174"
+                width="184"
+                height="22"
+                rx="5"
+                fill="#15171c"
+                stroke="#2a2e36"
+              />
+              <text x="180" y="189">events (60d) + prices</text>
+              <rect
+                x="170"
+                y="200"
+                width="184"
+                height="22"
+                rx="5"
+                fill="#15171c"
+                stroke="#2a2e36"
+              />
+              <text x="180" y="215">insights + settings</text>
+              <rect
+                x="170"
+                y="226"
+                width="184"
+                height="22"
+                rx="5"
+                fill="#15171c"
+                stroke="#2a2e36"
+              />
+              <text x="180" y="241">last 5 chat turns</text>
+            </g>
+            <!-- model -->
+            <rect
+              x="384"
+              y="120"
+              width="120"
+              height="80"
+              rx="12"
+              fill="rgba(86,197,245,.08)"
+              stroke="#0c4a6e"
+            />
+            <text
+              x="444"
+              y="153"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              Claude
+            </text>
+            <text x="444" y="172" text-anchor="middle" class="svg-mono" fill="#a6acba">Sonnet</text>
+            <path d="M354,150 L384,155" stroke="#56c5f5" stroke-width="1.5" fill="none" />
+            <!-- tools on the right -->
+            <text x="600" y="48" text-anchor="middle" class="svg-mono" fill="#717784">
+              tools it can call
+            </text>
+            <g font-family="ui-monospace,monospace" font-size="11">
+              <rect x="520" y="58" width="150" height="24" rx="5" fill="#15171c" stroke="#1f5e44" />
+              <text x="530" y="74" fill="#34d399">web_search</text>
+              <rect x="520" y="86" width="150" height="24" rx="5" fill="#15171c" stroke="#1f5e44" />
+              <text x="530" y="102" fill="#34d399">news_search (Tavily)</text>
+              <rect
+                x="520"
+                y="114"
+                width="150"
+                height="24"
+                rx="5"
+                fill="#15171c"
+                stroke="#5a1e2a"
+              />
+              <text x="530" y="130" fill="#fb7185">create / update / archive goal</text>
+              <rect
+                x="520"
+                y="142"
+                width="150"
+                height="24"
+                rx="5"
+                fill="#15171c"
+                stroke="#5a1e2a"
+              />
+              <text x="530" y="158" fill="#fb7185">link / unlink position</text>
+              <rect
+                x="520"
+                y="170"
+                width="150"
+                height="24"
+                rx="5"
+                fill="#15171c"
+                stroke="#5a1e2a"
+              />
+              <text x="530" y="186" fill="#fb7185">set DCA contribution</text>
+              <rect
+                x="520"
+                y="198"
+                width="150"
+                height="24"
+                rx="5"
+                fill="#15171c"
+                stroke="#5a1e2a"
+              />
+              <text x="530" y="214" fill="#fb7185">watchlist add / remove</text>
+            </g>
+            <path
+              d="M504,150 C512,150 512,120 520,118"
+              stroke="#a6acba"
+              stroke-width="1.3"
+              fill="none"
+            />
+            <path
+              d="M504,165 C512,178 512,182 520,182"
+              stroke="#a6acba"
+              stroke-width="1.3"
+              fill="none"
+            />
+            <!-- confirm gate -->
+            <rect
+              x="384"
+              y="262"
+              width="286"
+              height="58"
+              rx="10"
+              fill="rgba(251,113,133,.06)"
+              stroke="#5a1e2a"
+            />
+            <text
+              x="527"
+              y="286"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#fb7185"
+              font-weight="700"
+            >
+              confirm-before-write gate
+            </text>
+            <text x="527" y="306" text-anchor="middle" class="svg-mono" fill="#a6acba">
+              preview diff &rarr; you say yes &rarr; then it writes
+            </text>
+            <path d="M444,200 L470,262" stroke="#fb7185" stroke-width="1.3" fill="none" />
+            <!-- reply back to you -->
+            <path
+              d="M384,180 C240,300 130,260 116,210"
+              stroke="#56c5f5"
+              stroke-width="1.5"
+              fill="none"
+              stroke-dasharray="5 4"
+            />
+            <text x="210" y="330" text-anchor="middle" class="svg-lbl" fill="#717784">
+              answer + any confirmed change flow back to you
+            </text>
+          </svg>
+          <figcaption>
+            Read tools (green) run silently. Write tools (rose) for edits/links/DCA require a
+            two-step confirm — the model previews the exact before&rarr;after, you approve, then it
+            writes. Holdings (shares / cost) stay read-only brokerage truth.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">What it can do for you</h3>
+        <div class="grid">
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">ANSWER</span><span class="want ctx">YOUR DATA</span>
+            </div>
+            <p class="desc">
+              Goals, progress, watchlist, spend, last job run, settings, a discovery score's full
+              breakdown, prior conversation — straight from context.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">RESEARCH</span><span class="want hi">WEB</span>
+            </div>
+            <p class="desc">
+              web_search for general facts; news_search (Tavily) reaches paywalled finance outlets
+              (Reuters, WSJ, FT, Bloomberg). Sources are cited; capped at 3 calls each.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">CREATE</span><span class="want hi">DIRECT</span>
+            </div>
+            <p class="desc">
+              Create a goal, add/remove a watchlist ticker — additive actions run immediately.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">EDIT</span><span class="want lo">CONFIRM</span>
+            </div>
+            <p class="desc">
+              Update or archive a goal, link/unlink a position, set a DCA schedule — preview first,
+              write only after you agree.
+            </p>
+          </div>
+        </div>
+
+        <h3 class="sub">Things to ask it</h3>
+        <div class="chat-q">
+          &ldquo;Break down NVDA's discovery score — every component, including the weak
+          ones.&rdquo;
+        </div>
+        <div class="chat-q">
+          &ldquo;Am I on track for my Down Payment 2027 goal? What would close the gap?&rdquo;
+        </div>
+        <div class="chat-q">
+          &ldquo;Create a Retirement goal for $500k, Aggressive, Growth strategy.&rdquo;
+        </div>
+        <div class="chat-q">
+          &ldquo;Set $400 biweekly on my Vacation goal.&rdquo; (it shows the diff, you confirm)
+        </div>
+        <div class="chat-q">
+          &ldquo;What's the latest analyst coverage on ACGL?&rdquo; (uses news_search, cites the
+          URL)
+        </div>
+
+        <div class="callout good">
+          <span class="lbl">Why it's trustworthy</span>
+          <p>
+            Nothing destructive happens silently. Edits are gated behind an explicit confirm,
+            archives are soft (recoverable, never deleted), and your actual holdings can't be
+            altered through chat — there's no tool for it. Every chat-initiated change is logged
+            server-side with its full before&rarr;after diff.
+          </p>
+        </div>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ============================ DISCOVERY ===================== -->
+      <!-- ============================================================ -->
+      <section id="discovery" class="violet">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Discovery <span class="tag">— ideas by purpose and risk</span></h2>
+        </div>
+        <p class="sec-sub">
+          The full engine scores the market at 18:00 ET on weekdays, with cached re-ranks at 10:30
+          and 13:30. It starts with <b>fundamentals</b> such as earnings growth, revenue, margins,
+          valuation, profitability, and balance-sheet health, then adds news, insider buying,
+          earnings, filings, and momentum. The page re-ranks that evidence around what you are
+          actually looking for.
+        </p>
+
+        <div class="card">
+          <p class="lead">
+            Each ticker gets a single composite score (roughly 0–10 for healthy names) built from
+            <b>14 weighted signals</b>. The score is fully transparent: every component is stored,
+            so you (or the chat) can see exactly why a name ranked where it did — even the
+            unflattering parts.
+          </p>
+        </div>
+
+        <h3 class="sub">Purpose lenses and risk</h3>
+        <div class="card">
+          <p>
+            <b>Growth</b> rewards revenue, EPS, margins, and momentum. <b>Income</b> requires a
+            vetted monthly payer and weighs yield quality, payout, profitability, and balance-sheet
+            support. <b>Catalyst</b> prioritizes recent earnings beats, insider clusters, material
+            filings, analyst upgrades, and follow-through. <b>Quality/value</b> emphasizes durable
+            profitability, margins, valuation, and financial strength. <b>Raw</b> leaves the saved
+            14-signal composite untouched.
+          </p>
+          <p>
+            The risk selector changes what is allowed, not just the sorting. For Income, the minimum
+            yields are <b>2.5% / 3% / 5% / 6.5% / 8%</b> from VeryLow through Aggressive, and every
+            row names its product-risk floor. Live provider yield wins when it is usable; a labeled
+            curated estimate fills genuine data gaps. Quarterly payers do not pass the Income lens.
+          </p>
+        </div>
+
+        <h3 class="sub">The scoring funnel</h3>
+        <figure>
+          <!-- Discovery scoring funnel -->
+          <svg viewBox="0 0 680 420" role="img" aria-label="Discovery scoring funnel">
+            <!-- universe -->
+            <rect x="200" y="20" width="280" height="38" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+            <text x="340" y="44" text-anchor="middle" class="svg-lbl" fill="#e8eaf0">
+              ~11,000 ticker universe (US + Canada)
+            </text>
+            <path d="M340,58 L340,78" stroke="#a78bfa" stroke-width="1.5" />
+            <!-- signals grouped into 3 buckets -->
+            <text x="340" y="96" text-anchor="middle" class="svg-mono" fill="#717784">
+              14 signals, grouped &amp; weighted
+            </text>
+            <!-- fundamentals 55% -->
+            <rect
+              x="40"
+              y="108"
+              width="190"
+              height="150"
+              rx="10"
+              fill="rgba(167,139,250,.06)"
+              stroke="#3b2f63"
+            />
+            <text
+              x="135"
+              y="128"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#a78bfa"
+              font-weight="700"
+            >
+              Fundamentals — 55%
+            </text>
+            <g font-family="ui-monospace,monospace" font-size="11" fill="#c9cdd6">
+              <text x="56" y="150">EPS growth</text>
+              <text x="214" y="150" text-anchor="end" fill="#a78bfa">12</text>
+              <text x="56" y="170">Revenue growth</text>
+              <text x="214" y="170" text-anchor="end" fill="#a78bfa">10</text>
+              <text x="56" y="190">Margins</text>
+              <text x="214" y="190" text-anchor="end" fill="#a78bfa">10</text>
+              <text x="56" y="210">Valuation</text>
+              <text x="214" y="210" text-anchor="end" fill="#a78bfa">10</text>
+              <text x="56" y="230">Profitability</text>
+              <text x="214" y="230" text-anchor="end" fill="#a78bfa">8</text>
+              <text x="56" y="250">Balance sheet</text>
+              <text x="214" y="250" text-anchor="end" fill="#a78bfa">5</text>
+            </g>
+            <!-- quality 10% -->
+            <rect
+              x="245"
+              y="108"
+              width="190"
+              height="150"
+              rx="10"
+              fill="rgba(86,197,245,.05)"
+              stroke="#0c4a6e"
+            />
+            <text
+              x="340"
+              y="128"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#56c5f5"
+              font-weight="700"
+            >
+              Quality — 10%
+            </text>
+            <g font-family="ui-monospace,monospace" font-size="11" fill="#c9cdd6">
+              <text x="261" y="150">Liquidity</text>
+              <text x="419" y="150" text-anchor="end" fill="#56c5f5">5</text>
+              <text x="261" y="170">Size</text>
+              <text x="419" y="170" text-anchor="end" fill="#56c5f5">5</text>
+            </g>
+            <text
+              x="340"
+              y="206"
+              text-anchor="middle"
+              class="svg-mono"
+              fill="#717784"
+              font-size="10.5"
+            >
+              filters out
+            </text>
+            <text
+              x="340"
+              y="222"
+              text-anchor="middle"
+              class="svg-mono"
+              fill="#717784"
+              font-size="10.5"
+            >
+              illiquid
+            </text>
+            <text
+              x="340"
+              y="238"
+              text-anchor="middle"
+              class="svg-mono"
+              fill="#717784"
+              font-size="10.5"
+            >
+              micro-caps
+            </text>
+            <!-- attention 35% -->
+            <rect
+              x="450"
+              y="108"
+              width="190"
+              height="150"
+              rx="10"
+              fill="rgba(251,191,36,.05)"
+              stroke="#5b4708"
+            />
+            <text
+              x="545"
+              y="128"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#fbbf24"
+              font-weight="700"
+            >
+              Attention — 35%
+            </text>
+            <g font-family="ui-monospace,monospace" font-size="11" fill="#c9cdd6">
+              <text x="466" y="150">News volume</text>
+              <text x="624" y="150" text-anchor="end" fill="#fbbf24">8</text>
+              <text x="466" y="170">Earnings surprise</text>
+              <text x="624" y="170" text-anchor="end" fill="#fbbf24">8</text>
+              <text x="466" y="190">Momentum</text>
+              <text x="624" y="190" text-anchor="end" fill="#fbbf24">7</text>
+              <text x="466" y="210">Insider buying</text>
+              <text x="624" y="210" text-anchor="end" fill="#fbbf24">7</text>
+              <text x="466" y="230">Filing velocity</text>
+              <text x="624" y="230" text-anchor="end" fill="#fbbf24">3</text>
+              <text x="466" y="250">Sentiment</text>
+              <text x="624" y="250" text-anchor="end" fill="#fbbf24">2</text>
+            </g>
+            <!-- merge down to composite -->
+            <path
+              d="M135,258 C135,290 320,290 335,300"
+              stroke="#a78bfa"
+              stroke-width="1.3"
+              fill="none"
+            />
+            <path d="M340,258 L340,300" stroke="#56c5f5" stroke-width="1.3" fill="none" />
+            <path
+              d="M545,258 C545,290 360,290 345,300"
+              stroke="#fbbf24"
+              stroke-width="1.3"
+              fill="none"
+            />
+            <rect
+              x="230"
+              y="302"
+              width="220"
+              height="40"
+              rx="10"
+              fill="rgba(167,139,250,.1)"
+              stroke="#3b2f63"
+            />
+            <text
+              x="340"
+              y="327"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              composite score (~0–10)
+            </text>
+            <path d="M340,342 L340,362" stroke="#a78bfa" stroke-width="1.5" />
+            <rect x="232" y="364" width="216" height="38" rx="8" fill="#1c1f25" stroke="#2a2e36" />
+            <text x="340" y="388" text-anchor="middle" class="svg-lbl" fill="#34d399">
+              top names &rarr; Discovery page + digest
+            </text>
+          </svg>
+          <figcaption>
+            Fundamentals carry the most weight (55%), so the engine surfaces real businesses rather
+            than the loudest tickers. The weights are tunable per user in Settings; the breakdown
+            for any score is fully inspectable in chat. Sentiment is only a 2% tie-breaker and stays
+            neutral unless approved StockTwits access is enabled.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">How to use it</h3>
+        <ol class="steps vi">
+          <li>
+            <span class="t">Open the Discovery tab</span
+            ><span class="d"
+              >It starts on unheld ideas and can show up to 75 rows. Pick a lens and risk, then
+              narrow by sector, exchange, holdings, minimum lens score, or active catalyst.</span
+            >
+          </li>
+          <li>
+            <span class="t">Read the reason, not just the score</span
+            ><span class="d"
+              >Each row names the evidence carrying that lens. Income also shows yield, monthly
+              cadence, and product risk, so a high distribution is never presented as free
+              money.</span
+            >
+          </li>
+          <li>
+            <span class="t">Ask chat to explain it</span
+            ><span class="d"
+              >“Why did X score 7.2?” enumerates every component, including the weak ones.</span
+            >
+          </li>
+          <li>
+            <span class="t">Watchlist the interesting ones</span
+            ><span class="d">Park them to track coverage before committing capital.</span>
+          </li>
+          <li>
+            <span class="t">Check it against your holdings</span
+            ><span class="d"
+              >Use Compare to see whether a candidate actually beats something you already
+              own.</span
+            >
+          </li>
+        </ol>
+
+        <div class="callout info">
+          <span class="lbl">It also feeds your goals</span>
+          <p>
+            Goals and Discovery share the same strategy and risk rules. Income uses the same
+            monthly-only universe, yield floors, product-risk floors, and YieldMax-style blocklist.
+            High / Aggressive growth-oriented goals can also mix a few high-conviction discovery
+            picks into a <b>satellite sleeve</b> alongside broad-index ETFs, tax-fit to the goal's
+            account.
+          </p>
+        </div>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ====================== COMPARE & WATCHLIST ================= -->
+      <!-- ============================================================ -->
+      <section id="compare" class="amber">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>
+            Compare &amp; Watchlist
+            <span class="tag">— is the new thing better than what I own?</span>
+          </h2>
+        </div>
+        <p class="sec-sub">
+          Compare scores your holdings against the market using the same discovery engine, then
+          tells you — in plain English — whether any candidate actually beats what you already hold.
+          Watchlist is the lighter “keep an eye on this” list that feeds it.
+        </p>
+
+        <h3 class="sub">Compare — Holdings vs Market</h3>
+        <div class="card">
+          <p>
+            One unified table ranks your <b>held positions and the top candidates side by side</b>,
+            score descending, with held rows tinted and an ownership dot. Each row carries a
+            <b>verdict</b> — a deterministic, no-LLM action label — and the <b>Top Swaps</b> panel
+            surfaces the best held-vs-candidate pair where a swap is genuinely worth considering.
+            The raw 0–10 scores are normalized for rotation math: the candidate must clear 6.0 and
+            lead the holding by at least 3.0 points, with a Weakening or Broken thesis required for
+            an automatic rotation.
+          </p>
+        </div>
+
+        <figure>
+          <!-- Verdict map -->
+          <svg viewBox="0 0 680 300" role="img" aria-label="Compare verdict map">
+            <text x="170" y="28" text-anchor="middle" class="svg-mono" fill="#717784">
+              HELD — driven by thesis + price + size
+            </text>
+            <text x="510" y="28" text-anchor="middle" class="svg-mono" fill="#717784">
+              UNHELD — driven by score + signal quality
+            </text>
+            <line
+              x1="340"
+              y1="44"
+              x2="340"
+              y2="280"
+              stroke="#2a2e36"
+              stroke-width="1.5"
+              stroke-dasharray="4 5"
+            />
+            <!-- held verdicts -->
+            <g font-family="ui-monospace,monospace" font-size="12" font-weight="700">
+              <rect
+                x="40"
+                y="48"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(251,113,133,.1)"
+                stroke="#5a1e2a"
+              />
+              <text x="56" y="68" fill="#fb7185">EXIT</text>
+              <rect
+                x="40"
+                y="86"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(251,191,36,.1)"
+                stroke="#5b4708"
+              />
+              <text x="56" y="106" fill="#fbbf24">TRIM</text>
+              <rect
+                x="40"
+                y="124"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(251,191,36,.1)"
+                stroke="#5b4708"
+              />
+              <text x="56" y="144" fill="#fbbf24">WATCH</text>
+              <rect
+                x="40"
+                y="162"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(52,211,153,.1)"
+                stroke="#1f5e44"
+              />
+              <text x="56" y="182" fill="#34d399">ADD</text>
+              <rect
+                x="40"
+                y="200"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(52,211,153,.1)"
+                stroke="#1f5e44"
+              />
+              <text x="56" y="220" fill="#34d399">HOLD+</text>
+              <rect x="40" y="238" width="120" height="30" rx="7" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="56" y="258" fill="#a6acba">HOLD / NEEDS THESIS</text>
+            </g>
+            <g font-family="system-ui" font-size="11.5" fill="#a6acba">
+              <text x="172" y="68">thesis Broken</text>
+              <text x="172" y="106">Weakening + down &gt;10% / 30d</text>
+              <text x="172" y="144">Weakening, price holding</text>
+              <text x="172" y="182">Strengthening, room under cap</text>
+              <text x="172" y="220">Strengthening, near cap</text>
+              <text x="172" y="258">Intact / no thesis yet</text>
+            </g>
+            <!-- unheld verdicts -->
+            <g font-family="ui-monospace,monospace" font-size="12" font-weight="700">
+              <rect
+                x="362"
+                y="60"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(52,211,153,.1)"
+                stroke="#1f5e44"
+              />
+              <text x="378" y="80" fill="#34d399">BUY</text>
+              <rect
+                x="362"
+                y="110"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(251,191,36,.1)"
+                stroke="#5b4708"
+              />
+              <text x="378" y="130" fill="#fbbf24">WATCH</text>
+              <rect
+                x="362"
+                y="160"
+                width="120"
+                height="30"
+                rx="7"
+                fill="#1c1f25"
+                stroke="#2a2e36"
+              />
+              <text x="378" y="180" fill="#a6acba">MONITOR</text>
+              <rect
+                x="362"
+                y="210"
+                width="120"
+                height="30"
+                rx="7"
+                fill="rgba(251,113,133,.1)"
+                stroke="#5a1e2a"
+              />
+              <text x="378" y="230" fill="#fb7185">AVOID</text>
+            </g>
+            <g font-family="system-ui" font-size="11.5" fill="#a6acba">
+              <text x="494" y="80">score &ge;6 + news + beat/insider</text>
+              <text x="494" y="130">score &ge;3; verify first</text>
+              <text x="494" y="180">low-positive — no action</text>
+              <text x="494" y="230">negative — active bad catalysts</text>
+            </g>
+          </svg>
+          <figcaption>
+            Verdicts are deterministic, so the same data always yields the same label — no LLM
+            drift. Held verdicts hinge on your thesis health; unheld verdicts hinge on score
+            quality, not score alone.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">The Compare workflow</h3>
+        <ol class="steps">
+          <li>
+            <span class="t">Scan the unified ranking</span
+            ><span class="d"
+              >Where do your holdings sit relative to the best candidates the engine found?</span
+            >
+          </li>
+          <li>
+            <span class="t">Read the Top Swaps panel</span
+            ><span class="d"
+              >It only proposes a swap when the candidate clearly out-scores a holding by a
+              meaningful margin.</span
+            >
+          </li>
+          <li>
+            <span class="t">Check the verdict + rationale</span
+            ><span class="d"
+              >Each row's one-liner tells you the “so what.” A BUY needs confirming signals, not
+              just a high number.</span
+            >
+          </li>
+          <li>
+            <span class="t">Refresh to recompute</span
+            ><span class="d"
+              >Discovery runs nightly at 6pm ET; the Refresh button triggers a fresh compute on
+              demand.</span
+            >
+          </li>
+        </ol>
+
+        <h3 class="sub">Watchlist</h3>
+        <div class="card">
+          <p>
+            Tickers you're tracking but don't own. Each entry shows recent
+            <b>catalyst coverage</b> (articles in the last 14 days) and the latest headline, so you
+            can see whether a name is heating up. Add or remove entries from the page, or just tell
+            the chat “add RKLB to my watchlist.” Watchlisted names remain visible in Discovery with
+            a status badge, and they also feed the monthly allocation and discovery digests.
+          </p>
+        </div>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ====================== ACCOUNTS & TAX ====================== -->
+      <!-- ============================================================ -->
+      <section id="accounts" class="emerald">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Accounts &amp; Tax <span class="tag">— the right wrapper for every holding</span></h2>
+        </div>
+        <p class="sec-sub">
+          Vantage models your Wealthsimple sub-accounts (TFSA, RRSP, Spousal RRSP, RESP, LIRA, RRIF,
+          Personal, Margin, Corporate) with their currencies and contribution room — then applies
+          <b>Canadian tax law</b> to recommend where each holding belongs and to flag mistakes.
+        </p>
+
+        <div class="card">
+          <p class="lead">
+            The big idea: <b>where</b> you hold something matters almost as much as <b>what</b> you
+            hold. A US dividend ETF in a TFSA quietly leaks 15% withholding tax forever; the same
+            ETF in an RRSP doesn't, thanks to the Canada-US treaty. Vantage bakes these rules in so
+            you place holdings correctly without being a tax expert.
+          </p>
+        </div>
+
+        <div class="callout info">
+          <span class="lbl">Wealthsimple FX still matters</span>
+          <p>
+            Stock and ETF commissions are zero, but currency conversion is not automatically free. A
+            funded USD account avoids conversion on each US trade; converting between CAD and USD
+            can still incur Wealthsimple's FX fee. For a Canadian company or equivalent exposure,
+            Vantage therefore prefers a suitable CAD-listed security when it avoids unnecessary FX
+            without changing the investment thesis.
+          </p>
+        </div>
+
+        <h3 class="sub">The tax-placement matrix</h3>
+        <figure>
+          <!-- Tax placement matrix: holding type x account -->
+          <svg viewBox="0 0 680 330" role="img" aria-label="Tax-aware account placement matrix">
+            <!-- column headers -->
+            <g font-family="ui-monospace,monospace" font-size="12" fill="#e8eaf0">
+              <text x="250" y="40" text-anchor="middle">TFSA</text>
+              <text x="350" y="40" text-anchor="middle">RRSP / RRIF</text>
+              <text x="470" y="40" text-anchor="middle">Personal / Margin</text>
+              <text x="585" y="40" text-anchor="middle">RESP</text>
+            </g>
+            <line x1="30" y1="50" x2="650" y2="50" stroke="#2a2e36" stroke-width="1.5" />
+            <!-- row labels + cells -->
+            <g font-family="system-ui" font-size="12.5" fill="#c9cdd6">
+              <text x="30" y="78">US dividend ETF</text>
+              <text x="30" y="120">Cdn eligible dividend</text>
+              <text x="30" y="162">High-growth equity</text>
+              <text x="30" y="204">Bonds / HISA / interest</text>
+              <text x="30" y="246">US REIT / covered-call</text>
+              <text x="30" y="288">Day-trading activity</text>
+            </g>
+            <!-- helper to read: emerald=best, amber=ok, rose=avoid -->
+            <g
+              font-family="ui-monospace,monospace"
+              font-size="11"
+              font-weight="700"
+              text-anchor="middle"
+            >
+              <!-- US dividend -->
+              <text x="250" y="78" fill="#fb7185">leak 15%</text>
+              <text x="350" y="78" fill="#34d399">BEST</text>
+              <text x="470" y="78" fill="#fbbf24">ok (FTC)</text>
+              <text x="585" y="78" fill="#fb7185">leak 15%</text>
+              <!-- Cdn dividend -->
+              <text x="250" y="120" fill="#34d399">BEST</text>
+              <text x="350" y="120" fill="#fb7185">credit lost</text>
+              <text x="470" y="120" fill="#34d399">div credit</text>
+              <text x="585" y="120" fill="#fbbf24">ok</text>
+              <!-- growth -->
+              <text x="250" y="162" fill="#34d399">BEST</text>
+              <text x="350" y="162" fill="#fbbf24">ok</text>
+              <text x="470" y="162" fill="#fbbf24">50% gains</text>
+              <text x="585" y="162" fill="#34d399">good</text>
+              <!-- bonds -->
+              <text x="250" y="204" fill="#fbbf24">ok</text>
+              <text x="350" y="204" fill="#34d399">BEST</text>
+              <text x="470" y="204" fill="#fb7185">fully taxed</text>
+              <text x="585" y="204" fill="#fbbf24">ok</text>
+              <!-- REIT/cc -->
+              <text x="250" y="246" fill="#fb7185">leak</text>
+              <text x="350" y="246" fill="#34d399">BEST</text>
+              <text x="470" y="246" fill="#fb7185">ord. income</text>
+              <text x="585" y="246" fill="#fb7185">leak</text>
+              <!-- day trading -->
+              <text x="250" y="288" fill="#fb7185">RECLASS RISK</text>
+              <text x="350" y="288" fill="#fbbf24">room lost</text>
+              <text x="470" y="288" fill="#34d399">CORRECT</text>
+              <text x="585" y="288" fill="#fb7185">no</text>
+            </g>
+            <!-- legend -->
+            <g font-family="system-ui" font-size="11" fill="#a6acba">
+              <circle cx="40" cy="312" r="5" fill="#34d399" />
+              <text x="50" y="316">best</text>
+              <circle cx="120" cy="312" r="5" fill="#fbbf24" />
+              <text x="130" y="316">workable</text>
+              <circle cx="220" cy="312" r="5" fill="#fb7185" />
+              <text x="230" y="316">avoid</text>
+            </g>
+          </svg>
+          <figcaption>
+            The rules in one grid. Vantage applies these automatically: optimal placement adds to a
+            security's fit score, suboptimal placement subtracts, and a one-line rationale explains
+            each call. Swap a goal's account and the top picks visibly reshuffle.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">The rules it encodes</h3>
+        <div class="grid">
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">US DIVIDENDS</span><span class="want hi">RRSP</span>
+            </div>
+            <p class="desc">
+              The Canada-US treaty exempts the 15% withholding on US dividends held in an
+              RRSP/RRIF/LIRA. In a TFSA or RESP it's unrecoverable.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">CDN DIVIDENDS</span><span class="want hi">TFSA / NON-REG</span>
+            </div>
+            <p class="desc">
+              Eligible Canadian dividends get the dividend tax credit in non-registered, and
+              compound tax-free in a TFSA. The credit is lost inside an RRSP.
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">GROWTH</span><span class="want hi">TFSA</span>
+            </div>
+            <p class="desc">
+              Capital gains on big winners are tax-free forever in a TFSA — the single best wrapper.
+              Non-reg is workable (only 50% of gains taxed).
+            </p>
+          </div>
+          <div class="metric">
+            <div class="m-top">
+              <span class="name">INTEREST</span><span class="want hi">RRSP</span>
+            </div>
+            <p class="desc">
+              Bonds, HISA ETFs, and high-yield interest are taxed as ordinary income — shelter them
+              in a registered account, not non-reg.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <span class="lbl">Day trading is the exception that inverts everything</span>
+          <p>
+            For a DayTrading goal the logic flips: registered accounts are the <b>wrong</b> home.
+            Frequent trading in a <b>TFSA</b> can be reclassified by the CRA as carrying on a
+            business, making your “tax-free” gains fully taxable (<em
+              >Canadian Western Trust (Ahamed) v. The King</em
+            >, 2023 TCC 17). An <b>RRSP</b> is statutorily exempt from that reclassification, but
+            withdrawals are taxed as ordinary income and permanently destroy room — still the wrong
+            home. The engine ranks <b>Personal / Margin</b> first, and if you have no non-registered
+            account it raises a hard warning. (Corporate accounts are treated as a valid
+            non-registered home but get a caveat — corporate investment-income tax differs.)
+          </p>
+        </div>
+
+        <h3 class="sub">How to use it</h3>
+        <ol class="steps em">
+          <li>
+            <span class="t">Add your sub-accounts</span
+            ><span class="d"
+              >Accounts tab → record each account's type, currency, and contribution room.</span
+            >
+          </li>
+          <li>
+            <span class="t">Tag positions to accounts</span
+            ><span class="d"
+              >Each holding knows which account it lives in, so placement advice is concrete.</span
+            >
+          </li>
+          <li>
+            <span class="t">Read the per-goal account pick</span
+            ><span class="d"
+              >Every goal recommends a best account with a one-line tax rationale, and warns about
+              RRSP-only setups for spend-soon goals.</span
+            >
+          </li>
+          <li>
+            <span class="t">Watch the conflict flags</span
+            ><span class="d"
+              >If two goals overflow a single account's room, the goals page surfaces it.</span
+            >
+          </li>
+        </ol>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ====================== ALERTS & DIGESTS ==================== -->
+      <!-- ============================================================ -->
+      <section id="alerts" class="sky">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Alerts &amp; Digests <span class="tag">— the always-on monitor</span></h2>
+        </div>
+        <p class="sec-sub">
+          Behind the dashboard, a worker continuously ingests news, filings, earnings, insider
+          trades, analyst moves, prices, and macro data — then turns meaningful events into
+          <b>alerts</b> and packages routine updates into scheduled <b>digests</b>, delivered over
+          Telegram. Advisory only: it never trades.
+        </p>
+
+        <h3 class="sub">The ingestion &rarr; alert pipeline</h3>
+        <figure>
+          <!-- Alert pipeline -->
+          <svg viewBox="0 0 680 350" role="img" aria-label="Ingestion and alert pipeline">
+            <!-- sources column -->
+            <text x="78" y="26" text-anchor="middle" class="svg-mono" fill="#717784">
+              sources (free)
+            </text>
+            <g font-family="ui-monospace,monospace" font-size="10.5" fill="#c9cdd6">
+              <rect x="16" y="36" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="51">Finnhub news</text>
+              <rect x="16" y="62" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="77">SEC filings (8-K)</text>
+              <rect x="16" y="88" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="103">earnings calendar</text>
+              <rect x="16" y="114" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="129">insider Form-4s</text>
+              <rect x="16" y="140" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="155">analyst trends</text>
+              <rect x="16" y="166" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="181">Stored daily prices</text>
+              <rect x="16" y="192" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="207">macro releases</text>
+              <rect x="16" y="218" width="124" height="22" rx="5" fill="#15171c" stroke="#2a2e36" />
+              <text x="24" y="233">social (optional)</text>
+            </g>
+            <!-- arrow -->
+            <path d="M140,135 L176,135" stroke="#56c5f5" stroke-width="1.5" fill="none" />
+            <!-- events store -->
+            <rect
+              x="178"
+              y="104"
+              width="118"
+              height="62"
+              rx="10"
+              fill="rgba(86,197,245,.06)"
+              stroke="#0c4a6e"
+            />
+            <text
+              x="237"
+              y="130"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              MarketEvents
+            </text>
+            <text x="237" y="149" text-anchor="middle" class="svg-mono" fill="#a6acba">
+              + catalyst engine
+            </text>
+            <path d="M296,135 L332,135" stroke="#56c5f5" stroke-width="1.5" fill="none" />
+            <!-- gates -->
+            <rect
+              x="334"
+              y="92"
+              width="140"
+              height="86"
+              rx="10"
+              fill="rgba(251,191,36,.05)"
+              stroke="#5b4708"
+            />
+            <text
+              x="404"
+              y="112"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#fbbf24"
+              font-weight="700"
+            >
+              gates
+            </text>
+            <g
+              font-family="ui-monospace,monospace"
+              font-size="10.5"
+              fill="#c9cdd6"
+              text-anchor="middle"
+            >
+              <text x="404" y="132">6h dedup</text>
+              <text x="404" y="148">per-ticker cap</text>
+              <text x="404" y="164">spend cap + kill-switch</text>
+            </g>
+            <path d="M474,135 L510,135" stroke="#56c5f5" stroke-width="1.5" fill="none" />
+            <!-- LLM -->
+            <rect
+              x="512"
+              y="104"
+              width="148"
+              height="62"
+              rx="10"
+              fill="rgba(167,139,250,.06)"
+              stroke="#3b2f63"
+            />
+            <text
+              x="586"
+              y="128"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              Claude + emit_alert
+            </text>
+            <text x="586" y="148" text-anchor="middle" class="svg-mono" fill="#a6acba">
+              citations stripped
+            </text>
+            <!-- down to outputs -->
+            <path d="M586,166 L586,206" stroke="#a78bfa" stroke-width="1.5" fill="none" />
+            <rect x="470" y="208" width="190" height="40" rx="9" fill="#1c1f25" stroke="#2a2e36" />
+            <text x="565" y="232" text-anchor="middle" class="svg-lbl" fill="#34d399">
+              Insight row + Telegram alert
+            </text>
+            <!-- note -->
+            <text x="340" y="288" text-anchor="middle" class="svg-lbl" fill="#717784">
+              Only cited, deduped, in-budget events become alerts. Hallucinated citations are
+              dropped;
+            </text>
+            <text x="340" y="306" text-anchor="middle" class="svg-lbl" fill="#717784">
+              stale events (&gt;7d) are auto-skipped; a sustained API outage pings you instead of
+              failing silently.
+            </text>
+          </svg>
+          <figcaption>
+            Raw signal is cheap; <em>noise</em> is the enemy. Every alert clears dedup, per-ticker
+            caps, a daily spend cap, a kill-switch, and a citation check before it reaches your
+            phone. Each one also lands as an Insight on the dashboard.
+          </figcaption>
+        </figure>
+
+        <h3 class="sub">Event types the engine watches</h3>
+        <div class="pill-row">
+          <span class="pill">Earnings</span>
+          <span class="pill">Earnings beat</span>
+          <span class="pill">8-K / material 8-K</span>
+          <span class="pill">Breaking news</span>
+          <span class="pill">Intraday move</span>
+          <span class="pill">Sector news</span>
+          <span class="pill">Macro</span>
+          <span class="pill">Sentiment spike</span>
+          <span class="pill">Insider cluster</span>
+          <span class="pill">Analyst upgrade</span>
+        </div>
+
+        <h3 class="sub">The catalyst engine</h3>
+        <div class="card">
+          <p>
+            A step beyond single alerts: hourly during market hours, the catalyst engine groups
+            recent events per ticker and measures <b>conjunction</b> — is this just one signal, two
+            corroborating signals, or a full triplet (insider + earnings + 8-K)? Stronger
+            conjunction earns a buy <b>suggestion</b> from Claude (sized, cited, cap-checked),
+            tagged so you can see why it fired. A full triplet is rare enough to bypass the
+            cooldown.
+          </p>
+        </div>
+
+        <h3 class="sub">The digest schedule</h3>
+        <figure>
+          <!-- Digest timeline -->
+          <svg viewBox="0 0 680 250" role="img" aria-label="Digest schedule timeline">
+            <!-- day axis -->
+            <line x1="40" y1="120" x2="640" y2="120" stroke="#2a2e36" stroke-width="1.5" />
+            <!-- morning -->
+            <circle cx="120" cy="120" r="6" fill="#56c5f5" />
+            <text x="120" y="100" text-anchor="middle" class="svg-mono" fill="#56c5f5">7:00</text>
+            <text x="120" y="150" text-anchor="middle" class="svg-lbl" fill="#c9cdd6">Morning</text>
+            <text
+              x="120"
+              y="168"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              overnight news,
+            </text>
+            <text
+              x="120"
+              y="183"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              earnings today
+            </text>
+            <!-- evening -->
+            <circle cx="300" cy="120" r="6" fill="#56c5f5" />
+            <text x="300" y="100" text-anchor="middle" class="svg-mono" fill="#56c5f5">16:30</text>
+            <text x="300" y="150" text-anchor="middle" class="svg-lbl" fill="#c9cdd6">Evening</text>
+            <text
+              x="300"
+              y="168"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              day recap, AH
+            </text>
+            <text
+              x="300"
+              y="183"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              earnings, tomorrow
+            </text>
+            <!-- weekly -->
+            <circle cx="450" cy="120" r="6" fill="#a78bfa" />
+            <text x="450" y="100" text-anchor="middle" class="svg-mono" fill="#a78bfa">
+              Sun 20:00
+            </text>
+            <text x="450" y="150" text-anchor="middle" class="svg-lbl" fill="#c9cdd6">
+              Weekly deep-dive
+            </text>
+            <text
+              x="450"
+              y="168"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              cross-position +
+            </text>
+            <text
+              x="450"
+              y="183"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              stale-thesis review
+            </text>
+            <!-- monthly -->
+            <circle cx="580" cy="120" r="6" fill="#34d399" />
+            <text x="580" y="100" text-anchor="middle" class="svg-mono" fill="#34d399">
+              1st 09:00
+            </text>
+            <text x="580" y="150" text-anchor="middle" class="svg-lbl" fill="#c9cdd6">
+              Monthly allocation
+            </text>
+            <text
+              x="580"
+              y="168"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              budget &rarr; buy
+            </text>
+            <text
+              x="580"
+              y="183"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#717784"
+              font-size="11"
+            >
+              suggestions
+            </text>
+            <!-- discovery digest callout -->
+            <rect
+              x="360"
+              y="206"
+              width="280"
+              height="32"
+              rx="8"
+              fill="rgba(167,139,250,.06)"
+              stroke="#3b2f63"
+            />
+            <text x="500" y="227" text-anchor="middle" class="svg-mono" fill="#a78bfa">
+              + Sat 10:00 — Discovery digest (new names)
+            </text>
+            <text x="40" y="227" class="svg-lbl" fill="#717784">all times America/Toronto</text>
+          </svg>
+          <figcaption>
+            Routine updates are batched, not spammed: short briefings morning and evening on trading
+            days, a reflective weekly deep-dive on Sunday, an allocation plan on the 1st, and a
+            market-wide discovery survey on Saturday.
+          </figcaption>
+        </figure>
+
+        <div class="card">
+          <h3>What each digest is for</h3>
+          <p>
+            <b>Morning (7:00, weekdays):</b> overnight news on your holdings, pre-market movers,
+            earnings today, catalysts in the next 5 days. Flags thesis-status changes; no buy
+            suggestions.
+          </p>
+          <p>
+            <b>Evening (16:30, weekdays):</b> the day's winners/losers, after-hours earnings that
+            just reported, tomorrow's calendar, any thesis pillars that weakened today.
+          </p>
+          <p>
+            <b>Weekly deep-dive (Sun 20:00):</b> a more thoughtful synthesis across your whole book
+            — shared macro exposure, a diversification audit, and a review of theses gone stale
+            (&gt;30 days unvalidated).
+          </p>
+          <p>
+            <b>Monthly allocation (1st, 09:00):</b> takes your monthly budget and proposes specific
+            buys — held names below target weight, watchlist names with strong catalysts, and the
+            most-mentioned unheld tickers — each cap-validated so two buys can't blow the budget.
+          </p>
+          <p>
+            <b>Discovery digest (Sat 10:00):</b> surveys the market for names you're
+            <em>not</em> looking at yet, with buy suggestions on unheld names and rotation ideas out
+            of weakening positions.
+          </p>
+        </div>
+
+        <div class="callout info">
+          <span class="lbl">Where alerts live + the Ops view</span>
+          <p>
+            Every alert and suggestion is also an <b>Insight</b> on the dashboard, with a
+            chronological feed, filter chips, and Bought / Pass actions. The <b>Calendar</b> shows
+            scheduled catalysts (earnings, 8-Ks, macro) for the next 14 days. The <b>Ops</b> page is
+            your observability cockpit: last 50 job runs, today's vs month-to-date LLM spend,
+            per-source health, and a recent-errors feed.
+          </p>
+        </div>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ====================== PORTFOLIO TOOLS ===================== -->
+      <!-- ============================================================ -->
+      <section id="portfolio" class="violet">
+        <div class="sec-head">
+          <div class="bar"></div>
+          <h2>Portfolio Tools <span class="tag">— hold, rebalance, validate, prove</span></h2>
+        </div>
+        <p class="sec-sub">
+          The tools that manage the money you already have: a multi-account, multi-currency holdings
+          view, rebalance suggestions when you drift past your caps, a thesis engine that keeps
+          checking <em>why</em> you own each name, and a backtester to pressure-test a strategy
+          before you trust it.
+        </p>
+
+        <h3 class="sub">Portfolio — your holdings, properly</h3>
+        <div class="card">
+          <p>
+            The main holdings view tracks positions across all your sub-accounts in both
+            <b>CAD and USD</b>, with live prices (Alpaca &rarr; Finnhub &rarr; yfinance, with a
+            daily-bar fallback), per-position P&amp;L, a currency toggle, an account filter, and a
+            sector donut for concentration at a glance. Add positions one at a time or bulk-import
+            from a pasted CSV (preview &rarr; confirm). Your shares and cost basis are treated as
+            <b>brokerage truth</b> — read-only, never edited by the engine or chat.
+          </p>
+        </div>
+
+        <h3 class="sub">Rebalance — stay inside your own rules</h3>
+        <div class="card">
+          <p>
+            You set a single-position cap and a sector cap in Settings. The rebalance engine checks
+            your concentration against them and, when something drifts, asks Claude for a specific
+            <b>trim / rotate / exit</b> (or a fresh buy if you have cash) — every suggestion cited,
+            cap-validated, cooldown-checked, and de-duplicated so you don't get the same idea twice
+            in 24 hours. Trims that <em>reduce</em> an over-concentration are allowed even when a
+            naive cap check would block them.
+          </p>
+        </div>
+
+        <h3 class="sub">Theses — keep knowing why you own it</h3>
+        <figure>
+          <!-- Thesis health lifecycle -->
+          <svg viewBox="0 0 680 220" role="img" aria-label="Thesis health states">
+            <!-- evidence in -->
+            <rect x="20" y="92" width="120" height="40" rx="9" fill="#1c1f25" stroke="#2a2e36" />
+            <text
+              x="80"
+              y="110"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              fresh evidence
+            </text>
+            <text
+              x="80"
+              y="126"
+              text-anchor="middle"
+              class="svg-mono"
+              fill="#717784"
+              font-size="10"
+            >
+              news + events
+            </text>
+            <path d="M140,112 L184,112" stroke="#a78bfa" stroke-width="1.5" fill="none" />
+            <!-- engine -->
+            <rect
+              x="186"
+              y="86"
+              width="120"
+              height="52"
+              rx="10"
+              fill="rgba(167,139,250,.07)"
+              stroke="#3b2f63"
+            />
+            <text
+              x="246"
+              y="108"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              per-pillar
+            </text>
+            <text
+              x="246"
+              y="125"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#e8eaf0"
+              font-weight="700"
+            >
+              scoring
+            </text>
+            <!-- statuses -->
+            <g font-family="ui-monospace,monospace" font-size="12" font-weight="700">
+              <rect
+                x="360"
+                y="20"
+                width="150"
+                height="30"
+                rx="7"
+                fill="rgba(52,211,153,.1)"
+                stroke="#1f5e44"
+              />
+              <text x="376" y="40" fill="#34d399">Strengthening</text>
+              <rect x="360" y="60" width="150" height="30" rx="7" fill="#1c1f25" stroke="#2a2e36" />
+              <text x="376" y="80" fill="#a6acba">Intact</text>
+              <rect
+                x="360"
+                y="100"
+                width="150"
+                height="30"
+                rx="7"
+                fill="rgba(251,191,36,.1)"
+                stroke="#5b4708"
+              />
+              <text x="376" y="120" fill="#fbbf24">Weakening</text>
+              <rect
+                x="360"
+                y="140"
+                width="150"
+                height="30"
+                rx="7"
+                fill="rgba(251,113,133,.1)"
+                stroke="#5a1e2a"
+              />
+              <text x="376" y="160" fill="#fb7185">Broken</text>
+              <rect
+                x="360"
+                y="180"
+                width="150"
+                height="30"
+                rx="7"
+                fill="#1c1f25"
+                stroke="#2a2e36"
+              />
+              <text x="376" y="200" fill="#a6acba">Stale (&gt;30d)</text>
+            </g>
+            <path d="M306,104 L360,38" stroke="#34d399" stroke-width="1.2" fill="none" />
+            <path d="M306,110 L360,75" stroke="#a6acba" stroke-width="1.2" fill="none" />
+            <path d="M306,116 L360,115" stroke="#fbbf24" stroke-width="1.2" fill="none" />
+            <path d="M306,122 L360,155" stroke="#fb7185" stroke-width="1.2" fill="none" />
+            <!-- on change -->
+            <text x="600" y="100" text-anchor="middle" class="svg-mono" fill="#717784">
+              on status change
+            </text>
+            <text
+              x="600"
+              y="118"
+              text-anchor="middle"
+              class="svg-lbl"
+              fill="#34d399"
+              font-size="11"
+            >
+              &rarr; Insight + alert
+            </text>
+            <path d="M510,115 L540,108" stroke="#a78bfa" stroke-width="1.2" fill="none" />
+          </svg>
+          <figcaption>
+            A thesis is your reasons (pillars) and risks for owning a name. Each trading day the
+            engine re-checks every pillar against fresh, cited evidence and rolls them up to a
+            health status. A flip — say Intact&rarr;Weakening — fires an alert, so a broken story
+            reaches you instead of quietly rotting.
+          </figcaption>
+        </figure>
+        <div class="card">
+          <p>
+            The <b>Theses</b> page is the at-a-glance health view across all positions;
+            <b>per-position</b> detail (pillars, risks, evaluation history) lives on each holding's
+            page. Compare uses thesis health directly: a Broken thesis becomes an EXIT verdict, a
+            Strengthening one with room becomes ADD.
+          </p>
+        </div>
+
+        <h3 class="sub">Backtest — prove it on history first</h3>
+        <div class="card">
+          <p>
+            A deterministic, reproducible harness that replays a strategy over historical prices —
+            no LLM in the loop, so the same inputs always give the same result. Pick a strategy
+            (<b>monthly-allocation</b>, <b>rebalance-only</b>, or <b>catalyst-driven</b>), a date
+            range, and starting capital; get summary metrics, an equity curve versus a benchmark,
+            and the full trade log. It respects the same single-position and sector caps as the live
+            engine, so what you test resembles what you'd actually run.
+          </p>
+        </div>
+
+        <ol class="steps vi">
+          <li>
+            <span class="t">Keep holdings + accounts current</span
+            ><span class="d"
+              >Accurate positions and account tags are what make every other tool's advice
+              concrete.</span
+            >
+          </li>
+          <li>
+            <span class="t">Write a thesis per position</span
+            ><span class="d"
+              >Even a short one — it's what lets the engine tell you when the story changes.</span
+            >
+          </li>
+          <li>
+            <span class="t">Set your caps in Settings</span
+            ><span class="d"
+              >Single-position and sector caps drive both rebalance suggestions and Compare
+              verdicts.</span
+            >
+          </li>
+          <li>
+            <span class="t">Backtest before you commit to a rule</span
+            ><span class="d"
+              >Confirm a strategy would have behaved sanely before you let the live engine suggest
+              it.</span
+            >
+          </li>
+        </ol>
+
+        <div class="toplink"><a href="#top">&#8593; back to top</a></div>
+      </section>
+
+      <footer>
+        Vantage — Complete Guide &middot; advisory only, never places trades &middot; day-trade
+        price &amp; move are session-tagged (live / pre-market / after-hours / close, Alpaca IEX)
+        and stamped in ET; ATR% (with its $ value) &amp; relative volume are end-of-day daily
+        readings &middot; extended hours are IEX-only, so thin names can have gaps &middot; every
+        trade plan is a hypothesis, not a guarantee &middot; honor the stop.
+      </footer>
+    </div>
+  </body>
+</html>

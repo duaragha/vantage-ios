@@ -1,0 +1,23 @@
+{
+  "name": "vantage-ios",
+  "version": "1.0.3",
+  "private": true,
+  "description": "Vantage iOS shell for LiveContainer.",
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "sync": "cap sync ios",
+    "verify": "cap doctor ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "7.6.7",
+    "@capacitor/ios": "7.6.7"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.6.7",
+    "typescript": "5.8.3"
+  }
+}

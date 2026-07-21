@@ -1,0 +1,157 @@
+# vantage dev/prod infra: Postgres + web + worker + on-demand embedder.
+#
+# Postgres and the dashboard bind to 127.0.0.1 only. Tailscale Serve exposes
+# the dashboard at HTTPS port 3500 and proxies to the web app's loopback port
+# 3000. The worker is only consumed by the web app and operator curls on the
+# host itself.
+#
+# Run from the Linux source tree and always target the remote gaming PC:
+#   docker --context gamingpc compose --env-file .env -f infra/docker-compose.yml ps
+#   docker --context gamingpc compose --env-file .env -f infra/docker-compose.yml build web worker embedder
+# Never run this stack on the default/local Docker context.
+#
+# Env: reads ../.env (or copy .env.example -> .env at the repo root).
+
+name: vantage
+
+services:
+  postgres:
+    # pgvector image keeps schema compat with the pre-rename equity-agent
+    # deployment, which had the `vector` extension installed. Stock
+    # postgres:16-alpine would refuse to load the existing data dir.
+    image: pgvector/pgvector:pg16
+    container_name: vantage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-vantage}
+      TZ: America/Toronto
+      PGTZ: America/Toronto
+    ports:
+      # Loopback-only. Host port 5435 dodges system postgres (5432),
+      # atrium-postgres (5434), and the legacy equity-agent-postgres (5433).
+      - '127.0.0.1:5435:5432'
+    volumes:
+      # Reuse the existing equity_agent_pgdata named volume so the
+      # `ALTER DATABASE equity_agent RENAME TO vantage` from the rename
+      # migration is preserved. Docker will attach the existing volume
+      # in place; if it doesn't exist yet Docker creates an empty one.
+      - equity_agent_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [vantage]
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    image: vantage-web:local
+    container_name: vantage-web
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      # service_started, not service_healthy: chat degrades gracefully when the
+      # embedder is unreachable (loadEmbed → null), so a crash-looping embedder
+      # must never keep the whole dashboard from booting.
+      embedder: { condition: service_started }
+    env_file:
+      - path: ../.env
+        required: true
+      - path: ${CODEMAGIC_ENV_FILE:-/home/raghav/.config/serena/codemagic.env}
+        required: false
+    environment:
+      # Override the host-side DATABASE_URL with the docker-internal hostname.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vantage}
+      NODE_ENV: production
+      PORT: '3000'
+      HOSTNAME: '0.0.0.0'
+      TAILSCALE_BASE_URL: 'https://raghavsgamingpc.tail4d6220.ts.net:3500'
+      # Worker is reachable on the docker network at the service hostname.
+      WORKER_URL: http://worker:3001
+      EMBEDDER_URL: http://embedder:3002
+    ports:
+      # Loopback only. External access is via Tailscale Serve, which terminates
+      # HTTPS at 3500 and proxies to localhost:3000 on this host. Binding to
+      # 127.0.0.1 means LAN devices and the wider internet cannot reach the raw
+      # HTTP listener. Only the tailnet HTTPS endpoint is exposed.
+      - '127.0.0.1:3000:3000'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3000/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [vantage]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    image: vantage-worker:local
+    container_name: vantage-worker
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vantage}
+      NODE_ENV: production
+      WORKER_PORT: '3001'
+      WORKER_HOST: '0.0.0.0'
+    ports:
+      # Loopback-only — worker is internal; consumed by web (via the docker
+      # network) and by operator curls on the host itself.
+      - '127.0.0.1:3001:3001'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3001/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [vantage]
+
+  embedder:
+    build:
+      context: ..
+      dockerfile: apps/embedder/Dockerfile
+    image: vantage-embedder:local
+    container_name: vantage-embedder
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vantage}
+      NODE_ENV: production
+      PORT: '3002'
+      EMBEDDER_HOST: '0.0.0.0'
+      # Compose keeps one private embedder process; Railway uses a sleeping API
+      # plus a separate one-shot cron instead.
+      EMBED_SWEEP_INTERVAL_MS: '3600000'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3002/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [vantage]
+
+volumes:
+  equity_agent_pgdata:
+    # external: true tells Compose to use the existing equity_agent_pgdata
+    # volume (created under the pre-rename project) instead of creating a
+    # new one. The volume holds the live data so we cannot recreate it
+    # blindly. Once a fresh backup snapshot is taken this can be renamed
+    # to `vantage_postgres` for cosmetic consistency.
+    external: true
+    name: equity_agent_pgdata
+
+networks:
+  vantage:
+    name: vantage
+    driver: bridge

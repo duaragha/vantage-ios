@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Cache
+.turbo/
+.cache/
+.eslintcache
+
+# Env (real secrets only; .env.example is committed)
+.env
+.env.local
+.env.*.local
+
+# Local TLS material and database snapshots
+*.key
+*.crt
+*.dump
+.playwright-mcp/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+logs/*
+!logs/.gitkeep
+
+# Cloudflare Tunnel credentials (per-machine, contain a secret)
+infra/cloudflared/*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Prisma generated
+packages/db/generated/

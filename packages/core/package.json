@@ -1,0 +1,75 @@
+{
+  "name": "@vantage/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./verdict": {
+      "types": "./dist/discover/verdict.d.ts",
+      "import": "./dist/discover/verdict.js",
+      "default": "./dist/discover/verdict.js"
+    },
+    "./fx": {
+      "types": "./dist/fx.d.ts",
+      "import": "./dist/fx.js",
+      "default": "./dist/fx.js"
+    },
+    "./units": {
+      "types": "./dist/units.d.ts",
+      "import": "./dist/units.js",
+      "default": "./dist/units.js"
+    },
+    "./accounts": {
+      "types": "./dist/accounts/index.d.ts",
+      "import": "./dist/accounts/index.js",
+      "default": "./dist/accounts/index.js"
+    },
+    "./goals": {
+      "types": "./dist/goals/index.d.ts",
+      "import": "./dist/goals/index.js",
+      "default": "./dist/goals/index.js"
+    },
+    "./goals/monthly-income": {
+      "types": "./dist/goals/monthlyIncome.d.ts",
+      "import": "./dist/goals/monthlyIncome.js",
+      "default": "./dist/goals/monthlyIncome.js"
+    },
+    "./discover/signals": {
+      "types": "./dist/discover/signals.d.ts",
+      "import": "./dist/discover/signals.js",
+      "default": "./dist/discover/signals.js"
+    },
+    "./discover/analyst-upgrades": {
+      "types": "./dist/discover/analystUpgrades.d.ts",
+      "import": "./dist/discover/analystUpgrades.js",
+      "default": "./dist/discover/analystUpgrades.js"
+    },
+    "./portfolio": {
+      "types": "./dist/portfolio/index.d.ts",
+      "import": "./dist/portfolio/index.js",
+      "default": "./dist/portfolio/index.js"
+    }
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/*.test.ts src/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@vantage/db": "workspace:*",
+    "@vantage/llm": "workspace:*",
+    "@vantage/notify": "workspace:*",
+    "@vantage/sources": "workspace:*"
+  }
+}

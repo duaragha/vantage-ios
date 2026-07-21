@@ -1,0 +1,37 @@
+# Cloudflare Tunnel config for the Equity Agent dashboard.
+#
+# Placeholders (replace all three before starting the tunnel):
+#   <TUNNEL_UUID>        — printed by `cloudflared tunnel create equity-agent`
+#   <CREDENTIALS_PATH>   — absolute path to the JSON Cloudflare writes during
+#                          `cloudflared tunnel create`. On Windows this is
+#                          typically C:\Users\<you>\.cloudflared\<UUID>.json
+#   <DASHBOARD_HOSTNAME> — e.g. equity.example.com
+#
+# See infra/cloudflared/README.md for the full setup walkthrough.
+
+tunnel: <TUNNEL_UUID>
+credentials-file: <CREDENTIALS_PATH>
+
+# Connection reliability
+protocol: quic
+loglevel: info
+retries: 5
+no-autoupdate: true
+
+ingress:
+  # Dashboard — Next.js on port 3000
+  - hostname: <DASHBOARD_HOSTNAME>
+    service: http://localhost:3000
+    originRequest:
+      connectTimeout: 10s
+      noTLSVerify: true
+      # Preserve Host header so iron-session sets its cookie on the public
+      # hostname rather than localhost.
+      httpHostHeader: <DASHBOARD_HOSTNAME>
+
+  # Worker HTTP endpoints (port 3001) are INTERNAL — never expose them here.
+  # The web app reaches them via http://localhost:3001 with x-worker-secret.
+  # If you ever need remote worker access, gate it with Cloudflare Access.
+
+  # Fallback 404 for anything that doesn't match above
+  - service: http_status:404
