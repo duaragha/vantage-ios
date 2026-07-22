@@ -14,8 +14,12 @@ import {
   type DigestResult,
   type DigestKindLabel,
 } from '@vantage/core';
-import { queueTelegramDelivery } from '@vantage/db';
+import { getNotificationPreferences, queueTelegramDelivery } from '@vantage/db';
 import { sendSelfAlert } from '@vantage/notify';
+import {
+  includeInsightInNotification,
+  shouldQueueDigestNotification,
+} from '../lib/notificationRouting.js';
 
 export interface DigestDispatchResult {
   kind: DigestKind;
@@ -25,7 +29,7 @@ export interface DigestDispatchResult {
   failedSources: string[];
   tokens: DigestResult['tokens'];
   llmCallIds: number[];
-  telegram: { ok: true; queued: true; deliveryId: number };
+  telegram: { ok: true; queued: boolean; deliveryId: number | null };
 }
 
 function deepLinkBase(): string {
@@ -53,23 +57,30 @@ export async function runDigest(
     throw err;
   }
 
+  const preferences = await getNotificationPreferences();
+  const notificationInsights = digest.insights.filter((insight) =>
+    includeInsightInNotification(insight, preferences),
+  );
+  const shouldQueue = shouldQueueDigestNotification(preferences, notificationInsights.length);
   const markdown = formatDigestForTelegram(
     kind as DigestKindLabel,
-    digest.summary,
-    digest.insights,
+    preferences.scheduledDigests ? digest.summary : 'New actionable recommendations are ready.',
+    notificationInsights,
     {
       deepLinkBase: deepLinkBase(),
       failedSources: digest.failedSources,
     },
   );
 
-  const delivery = await queueTelegramDelivery({
-    dedupeKey: digestDeliveryKey(kind, digest),
-    text: markdown,
-    parseMode: 'Markdown',
-    disableWebPagePreview: true,
-    expiresAt: new Date(Date.now() + digestExpiryMs(kind)),
-  });
+  const delivery = shouldQueue
+    ? await queueTelegramDelivery({
+        dedupeKey: digestDeliveryKey(kind, digest),
+        text: markdown,
+        parseMode: 'Markdown',
+        disableWebPagePreview: true,
+        expiresAt: new Date(Date.now() + digestExpiryMs(kind)),
+      })
+    : null;
 
   const baseResult = {
     kind,
@@ -84,15 +95,16 @@ export async function runDigest(
   log.info?.(
     {
       kind,
-      deliveryId: delivery.id,
+      deliveryId: delivery?.id ?? null,
+      notificationInsights: notificationInsights.length,
       insights: digest.insights.length,
       failedSources: digest.failedSources,
     },
-    'digest queued for Telegram delivery',
+    delivery ? 'digest queued for Telegram delivery' : 'digest notification muted by settings',
   );
   return {
     ...baseResult,
-    telegram: { ok: true, queued: true, deliveryId: delivery.id },
+    telegram: { ok: true, queued: delivery !== null, deliveryId: delivery?.id ?? null },
   };
 }
 

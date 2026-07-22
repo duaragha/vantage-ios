@@ -19,43 +19,50 @@ datasource db {
 }
 
 model UserSettings {
-  id                          Int      @id @default(1)
-  passwordHash                String
-  monthlyBudget               Decimal  @default(0)
-  singlePositionCapPct        Float    @default(15)
-  sectorCapPct                Float    @default(40)
-  intradayMoveThresholdPct    Float    @default(5)
-  passCooldownDays            Int      @default(14)
-  perTickerDailyAlertCap      Int      @default(3)
-  telegramChatId              String? // Legacy only; worker delivery uses TELEGRAM_CHAT_ID.
-  dailySpendCapUsd            Decimal  @default(2.0)
-  monthlySpendCapUsd          Decimal  @default(10.0)
-  killSwitch                  Boolean  @default(false)
-  timezone                    String   @default("America/Toronto")
+  id                             Int      @id @default(1)
+  passwordHash                   String
+  monthlyBudget                  Decimal  @default(0)
+  singlePositionCapPct           Float    @default(15)
+  sectorCapPct                   Float    @default(40)
+  intradayMoveThresholdPct       Float    @default(5)
+  passCooldownDays               Int      @default(14)
+  perTickerDailyAlertCap         Int      @default(3)
+  telegramChatId                 String? // Legacy only; worker delivery uses TELEGRAM_CHAT_ID.
+  dailySpendCapUsd               Decimal  @default(2.0)
+  monthlySpendCapUsd             Decimal  @default(10.0)
+  killSwitch                     Boolean  @default(false)
+  timezone                       String   @default("America/Toronto")
   // Phase 15 — discovery engine tuning. `discoveryWeights` holds an optional
   // override blob shaped like { news, earnings, insider, filings, momentum, sentiment };
   // when null the defaults in packages/core/src/discover/signals.ts win.
-  discoveryWeights            Json?
+  discoveryWeights               Json?
   // Microcap floor for the discovery universe. $500M default per spec "Microcap noise".
-  discoveryMinMcapUsd         Decimal  @default(500000000)
+  discoveryMinMcapUsd            Decimal  @default(500000000)
   // Phase 15 — daily cap for Haiku ticker-extract fallback calls across the
   // whole system. Incremented inline; checked before spending tokens.
-  haikuTickerExtractUsedToday Int      @default(0)
-  haikuTickerExtractDay       DateTime @default(now())
+  haikuTickerExtractUsedToday    Int      @default(0)
+  haikuTickerExtractDay          DateTime @default(now())
   // Phase 16 — multi-exchange coverage. JSON array of exchange codes the
   // universe refresh should iterate. Default covers US + TSX for a Canadian
   // Wealthsimple user. Allowed values: "US", "TO" (TSX), "NE" (Cboe Canada
   // / NEO), "V" (TSX-V). Plumbs into pollTickerUniverse.
-  exchangesEnabled            Json     @default("[\"US\", \"TO\"]")
+  exchangesEnabled               Json     @default("[\"US\", \"TO\"]")
   // Phase 17 — Catalyst engine knobs. Cap on catalyst-driven buy suggestions
   // emitted per day, whether multi-signal conjunction is required for a buy
   // suggestion to fire, daily Sonnet spend cap dedicated to the catalyst
   // pipeline, and a master enable flag.
-  catalystMaxPerDay           Int      @default(2)
-  catalystRequireConjunction  Boolean  @default(true)
-  catalystDailySpendCapUsd    Decimal  @default(1.0)
-  catalystEnabled             Boolean  @default(true)
-  updatedAt                   DateTime @updatedAt
+  catalystMaxPerDay              Int      @default(2)
+  catalystRequireConjunction     Boolean  @default(true)
+  catalystDailySpendCapUsd       Decimal  @default(1.0)
+  catalystEnabled                Boolean  @default(true)
+  // Phone-delivery routing. Critical price, thesis, goal, and operational
+  // alerts stay always-on; these switches control recommendation traffic and
+  // scheduled briefings independently.
+  notifyBuySuggestions           Boolean  @default(true)
+  notifyRebalances               Boolean  @default(true)
+  notifyExceptionalOpportunities Boolean  @default(true)
+  notifyScheduledDigests         Boolean  @default(true)
+  updatedAt                      DateTime @updatedAt
 }
 
 model Position {

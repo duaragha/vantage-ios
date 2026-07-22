@@ -27,7 +27,7 @@ const EXPECTED_SCHEDULES = [
   ['backfill.profiles', '15 3 * * *'],
   ['quality.lottery', '30 1 * * *'],
   ['goals.snapshot', '0 3 * * *'],
-  ['catalyst.run', '0 9-16 * * 1-5'],
+  ['catalyst.run', '*/5 9-16 * * 1-5'],
   ['thesis.batch', '45 16 * * 1-5'],
   ['db.retention', '30 3 * * *'],
 ] as const;

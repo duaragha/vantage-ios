@@ -1,6 +1,6 @@
 # Catalyst Engine
 
-The catalyst engine is the swing-trading discovery loop that runs every hour during US market hours. It watches four categories of catalyst events on tickers Raghav does not currently hold and converts the strongest signals into 48-hour BuySuggestion insights with cap-aware sizing, tier-1 citations, and Telegram delivery.
+The catalyst engine is the swing-trading discovery loop that checks for queued signals every five minutes during US market hours. It watches four categories of catalyst events on tickers Raghav does not currently hold and converts the strongest signals into 48-hour BuySuggestion insights with cap-aware sizing, tier-1 citations, and Telegram delivery.
 
 ## Signals
 
@@ -53,7 +53,7 @@ The Settings page exposes four catalyst knobs in the "Catalyst engine" section:
 
 ## Schedule
 
-The cron entry `0 9-16 * * 1-5` runs the engine at the top of every hour from 9 AM through 4 PM `America/Toronto`, weekdays only. Manual trigger: `POST /jobs/catalyst/run` with the worker secret. The 1-hour idempotency bucket means a manual poke during the same hour as the scheduled run dedups cleanly.
+The cron entry `*/5 9-16 * * 1-5` checks every five minutes from 9 AM through 4:59 PM `America/Toronto`, weekdays only. A cheap indexed precheck skips the engine when no unprocessed catalyst event is waiting. Manual trigger: `POST /jobs/catalyst/run` with the worker secret. The five-minute idempotency bucket means a manual poke during the same window as the scheduled run dedups cleanly.
 
 ## Telegram dispatch
 
@@ -66,7 +66,7 @@ Each emitted Insight fires its own Telegram message via the existing alert-dispa
 - Deep link to `/insights/<id>`.
 - "Not investment advice." footer.
 
-If the user's `telegramChatId` is unset, the formatter still runs and the markdown is logged but no message is sent.
+Phone delivery uses the worker's `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. The exceptional-opportunity switch in Settings can mute these individual messages without disabling the engine or hiding its insights in Vantage.
 
 ## Backtesting
 

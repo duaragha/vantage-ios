@@ -4,9 +4,12 @@
 
 import * as React from 'react';
 import { getSettings } from '@vantage/db';
-import { FrostedPanel } from '@/components/FrostedPanel';
 import { SettingsForm } from './SettingsForm';
-import type { DiscoveryWeightsForm } from './actions';
+import {
+  getNotificationDeliveryStatus,
+  type DiscoveryWeightsForm,
+  type NotificationDeliveryStatus,
+} from './actions';
 import { DbErrorBanner } from '@/components/DbErrorBanner';
 
 export const dynamic = 'force-dynamic';
@@ -61,52 +64,66 @@ function readExchanges(raw: unknown): ('US' | 'TO' | 'NE' | 'V')[] {
 export default async function SettingsPage(): Promise<React.ReactElement> {
   let settings: Awaited<ReturnType<typeof getSettings>> = null;
   let dbError: string | null = null;
+  let notificationStatus: NotificationDeliveryStatus = {
+    state: 'unavailable',
+    pending: 0,
+    dead: 0,
+  };
+  const notificationStatusPromise = getNotificationDeliveryStatus();
   try {
     settings = await getSettings();
   } catch (err) {
     dbError = err instanceof Error ? err.message : 'database unreachable';
   }
+  try {
+    notificationStatus = await notificationStatusPromise;
+  } catch {
+    notificationStatus = { state: 'unavailable', pending: 0, dead: 0 };
+  }
 
   return (
-    <div className="cc-page-narrow max-w-4xl">
+    <div className="cc-page-narrow max-w-6xl">
       <header className="mb-6">
         <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
           settings
         </div>
-        <h1 className="cc-page-title">Knobs</h1>
+        <h1 className="cc-page-title">Control center</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Everything the worker consults on each tick.
+          Alerts, portfolio guardrails, discovery, and account controls.
         </p>
       </header>
 
       <DbErrorBanner message={dbError} />
 
       {settings ? (
-        <FrostedPanel padding="lg">
-          <SettingsForm
-            initial={{
-              monthlyBudget: Number(settings.monthlyBudget),
-              singlePositionCapPct: settings.singlePositionCapPct,
-              sectorCapPct: settings.sectorCapPct,
-              intradayMoveThresholdPct: settings.intradayMoveThresholdPct,
-              passCooldownDays: settings.passCooldownDays,
-              perTickerDailyAlertCap: settings.perTickerDailyAlertCap,
-              dailySpendCapUsd: Number(settings.dailySpendCapUsd),
-              monthlySpendCapUsd: Number(settings.monthlySpendCapUsd),
-              timezone: settings.timezone,
-              killSwitch: settings.killSwitch,
-              discoveryWeights: readDiscoveryWeights(settings.discoveryWeights),
-              discoveryMinMcapUsd: Number(settings.discoveryMinMcapUsd),
-              exchangesEnabled: readExchanges(settings.exchangesEnabled),
-              catalystEnabled: settings.catalystEnabled,
-              catalystMaxPerDay: settings.catalystMaxPerDay,
-              catalystRequireConjunction: settings.catalystRequireConjunction,
-              catalystDailySpendCapUsd: Number(settings.catalystDailySpendCapUsd),
-            }}
-          />
-        </FrostedPanel>
+        <SettingsForm
+          notificationStatus={notificationStatus}
+          initial={{
+            monthlyBudget: Number(settings.monthlyBudget),
+            singlePositionCapPct: settings.singlePositionCapPct,
+            sectorCapPct: settings.sectorCapPct,
+            intradayMoveThresholdPct: settings.intradayMoveThresholdPct,
+            passCooldownDays: settings.passCooldownDays,
+            perTickerDailyAlertCap: settings.perTickerDailyAlertCap,
+            dailySpendCapUsd: Number(settings.dailySpendCapUsd),
+            monthlySpendCapUsd: Number(settings.monthlySpendCapUsd),
+            timezone: settings.timezone,
+            killSwitch: settings.killSwitch,
+            discoveryWeights: readDiscoveryWeights(settings.discoveryWeights),
+            discoveryMinMcapUsd: Number(settings.discoveryMinMcapUsd),
+            exchangesEnabled: readExchanges(settings.exchangesEnabled),
+            catalystEnabled: settings.catalystEnabled,
+            catalystMaxPerDay: settings.catalystMaxPerDay,
+            catalystRequireConjunction: settings.catalystRequireConjunction,
+            catalystDailySpendCapUsd: Number(settings.catalystDailySpendCapUsd),
+            notifyBuySuggestions: settings.notifyBuySuggestions,
+            notifyRebalances: settings.notifyRebalances,
+            notifyExceptionalOpportunities: settings.notifyExceptionalOpportunities,
+            notifyScheduledDigests: settings.notifyScheduledDigests,
+          }}
+        />
       ) : (
-        <FrostedPanel padding="lg">
+        <div className="cc-panel p-5 sm:p-6">
           <p className="text-sm text-muted-foreground">
             Settings row not found. Run the DB seed (
             <code className="font-mono text-xs">
@@ -114,7 +131,7 @@ export default async function SettingsPage(): Promise<React.ReactElement> {
             </code>
             ).
           </p>
-        </FrostedPanel>
+        </div>
       )}
     </div>
   );

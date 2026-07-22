@@ -155,13 +155,13 @@ export const jobsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     return reply.send(outcome);
   });
 
-  // Phase 17.5 — Catalyst engine manual trigger. Same 1h idempotency bucket
-  // as the cron registration so a manual poke during the same hour gets
+  // Phase 17.5 — Catalyst engine manual trigger. Same 5m idempotency bucket
+  // as the cron registration so a manual poke during the same window gets
   // deduped against the scheduled run.
   fastify.post('/jobs/catalyst/run', async (_req, reply) => {
     const outcome = await runJob({
       name: 'catalyst.run',
-      bucketSeconds: 60 * 60,
+      bucketSeconds: 5 * 60,
       log: fastify.log,
       handler: () => runCatalystEngine(fastify.log),
     });

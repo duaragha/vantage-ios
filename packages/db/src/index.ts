@@ -67,6 +67,7 @@ export * from './discoveryScores.js';
 export * from './events.js';
 export * from './insights.js';
 export * from './insiderTransactions.js';
+export * from './notificationPreferences.js';
 export * from './passCooldown.js';
 export * from './positions.js';
 export * from './positionLots.js';

@@ -5,18 +5,19 @@
  * durable Telegram delivery per emitted Insight. The outbox dispatcher owns
  * network retries, so a provider outage cannot lose a catalyst alert.
  *
- * Cron registration lives in cron.ts: `0 9-16 * * 1-5` (top of every hour
- * during US-equity market hours, weekdays only). The /jobs/catalyst/run
- * endpoint exposes a manual trigger gated by the worker secret.
+ * Cron registration lives in cron.ts and checks every five minutes. A cheap
+ * pending-event gate keeps empty ticks to one indexed lookup, while a new
+ * qualifying catalyst reaches this engine within roughly five minutes.
  */
 
 import type { FastifyBaseLogger } from 'fastify';
 import {
+  CATALYST_KINDS,
   evaluateCatalysts,
   formatCatalystAlertForTelegram,
   type CatalystResult,
 } from '@vantage/core';
-import { prisma, queueTelegramDelivery } from '@vantage/db';
+import { getNotificationPreferences, prisma, queueTelegramDelivery } from '@vantage/db';
 
 export interface RunCatalystEngineResult extends CatalystResult {
   telegramQueued: number;
@@ -25,6 +26,25 @@ export interface RunCatalystEngineResult extends CatalystResult {
 
 function deepLinkBase(): string {
   return process.env['DASHBOARD_BASE_URL'] ?? 'http://localhost:3000';
+}
+
+/** Cheap cron gate: do no catalyst work until an eligible event is waiting. */
+export async function hasPendingCatalystWork(now = new Date()): Promise<boolean> {
+  const settings = await prisma.userSettings.findUnique({
+    where: { id: 1 },
+    select: { catalystEnabled: true },
+  });
+  if (settings?.catalystEnabled === false) return false;
+
+  const pending = await prisma.marketEvent.findFirst({
+    where: {
+      kind: { in: [...CATALYST_KINDS] },
+      processedAt: null,
+      occurredAt: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+    },
+    select: { id: true },
+  });
+  return pending !== null;
 }
 
 export async function runCatalystEngine(
@@ -38,6 +58,15 @@ export async function runCatalystEngine(
   };
 
   if (result.suggestionIds.length === 0) {
+    return { ...result, ...dispatch };
+  }
+
+  const preferences = await getNotificationPreferences();
+  if (!preferences.exceptionalOpportunities) {
+    logger.info?.(
+      { suggestionIds: result.suggestionIds },
+      '[catalyst] exceptional-opportunity notifications muted by settings',
+    );
     return { ...result, ...dispatch };
   }
 

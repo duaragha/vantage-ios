@@ -33,7 +33,7 @@ import { runDiscoveryDigest } from './jobs/digestDiscovery.js';
 import { pollInsiders } from './jobs/pollInsiders.js';
 import { pollAnalysts } from './jobs/pollAnalysts.js';
 import { pollFundamentals } from './jobs/pollFundamentals.js';
-import { runCatalystEngine } from './jobs/runCatalystEngine.js';
+import { hasPendingCatalystWork, runCatalystEngine } from './jobs/runCatalystEngine.js';
 import { snapshotGoals } from './jobs/snapshotGoals.js';
 import { updateLotteryFlags } from './jobs/updateLotteryFlags.js';
 import { backfillProfiles } from './jobs/backfillProfiles.js';
@@ -304,16 +304,16 @@ export const CRON_SPECS: readonly CronSpec[] = [
     bucketSeconds: 24 * 3600,
     run: (log) => snapshotGoals(log),
   },
-  // Phase 17.5 — Catalyst engine runs at the top of every hour during US
-  // market hours on weekdays. Each tick pulls unprocessed catalyst events
-  // from the last 24h, applies quality + cap + cooldown gates, and asks
-  // Sonnet for a buy suggestion. Emitted Telegram notifications enter the
-  // durable outbox and are delivered by the alert-dispatch job.
+  // Phase 17.5 — The exceptional-opportunity fast lane checks every five
+  // minutes during US market hours. An indexed precheck makes empty ticks
+  // cheap; real catalyst events still pass the full quality, cap, cooldown,
+  // and citation gates before any phone notification is queued.
   {
-    expr: '0 9-16 * * 1-5',
+    expr: '*/5 9-16 * * 1-5',
     name: 'catalyst.run',
-    bucketSeconds: 60 * 60,
+    bucketSeconds: 5 * 60,
     run: (log) => runCatalystEngine(log),
+    precheck: hasPendingCatalystWork,
   },
   // Daily thesis re-eval. Runs 4:45pm ET weekdays — 15 min after the evening
   // poll window closes, so the thesis engine has the freshest 24h of articles

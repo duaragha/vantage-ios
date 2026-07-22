@@ -118,35 +118,35 @@ Telegram bot registration is in [`docs/TELEGRAM_SETUP.md`](docs/TELEGRAM_SETUP.m
 
 All cron entries run in `America/Toronto`. Polls fire on weekdays only unless noted.
 
-| Cadence                | Job                        | What it does                                                                        |
-| ---------------------- | -------------------------- | ----------------------------------------------------------------------------------- |
-| every 5 min¹           | `poll.news`                | Finnhub headlines plus approved StockTwits access                                   |
-| every 5 min¹           | `poll.filings`             | EDGAR filings → 8-K MarketEvents (10-Q/10-K polled hourly)                          |
-| every min (04-19 ET)²  | `poll.prices`              | Live held/scanner prices, move events, stop and target alerts                       |
-| every 15 min¹          | `poll.earnings`            | Finnhub earnings calendar + actuals → EarningsBeat events                           |
-| every 15 min¹          | `poll.marketNews`          | Market-wide news for the discovery scorer                                           |
-| every 30 min (9-16 ET) | `poll.insiders`            | Finnhub insider transactions → InsiderCluster events                                |
-| every hour (9-16 ET)   | `catalyst.run`             | Catalyst-driven buy engine — see [docs/CATALYST_ENGINE.md](docs/CATALYST_ENGINE.md) |
-| 06:00 ET               | `poll.macro`               | FRED macro series                                                                   |
-| 07:00 ET               | `poll.analysts`            | Finnhub analyst recommendation trends → AnalystUpgrade events                       |
-| 07:00 ET               | `digest.morning`           | Pre-market digest → Telegram                                                        |
-| 10:30, 13:30 ET        | `discover.compute.cached`  | Re-rank discovery from cached market data                                           |
-| 16:30 ET               | `digest.evening`           | Post-close digest → Telegram                                                        |
-| 16:45 ET               | `thesis.batch`             | Re-evaluate every open thesis                                                       |
-| 17:00 ET               | `poll.eodHistory`          | Alpaca US + Yahoo Canada daily bars, with bounded Tiingo fallback                   |
-| 18:00 ET               | `discover.compute`         | Nightly discovery score recompute                                                   |
-| daily 01:30 ET         | `quality.lottery`          | Flag sub-$5, extreme-volatility lottery tickers                                     |
-| daily 02:00 ET         | `poll.fundamentals`        | Refresh stale statements and ratios                                                 |
-| daily 03:00 ET         | `goals.snapshot`           | Persist goal progress and off-track transitions                                     |
-| daily 03:15 ET         | `backfill.profiles`        | Enrich newly seeded US listings with sector and market cap                          |
-| daily 03:30 ET         | `db.retention`             | Bounded retention sweep for operational tables (JobRun, outbox, old events)         |
-| Sat 10:00 ET           | `digest.discovery`         | Saturday market-discovery digest                                                    |
-| Sun 06:00 ET           | `poll.tickerUniverse`      | Refresh symbol universe (US + enabled Canadian exchanges)                           |
-| Sun 20:00 ET           | `digest.weeklyDeepDive`    | Opus weekly cross-position synthesis                                                |
-| 1st of month, 09:00 ET | `digest.monthlyAllocation` | Monthly allocation digest                                                           |
-| every 30s³             | `alert.dispatch`           | Sweep MarketEvents into Alert Insights + durable queue                              |
-| every 30s³             | `telegram.dispatch`        | Deliver and retry the durable Telegram outbox                                       |
-| every 30 min           | `watchdog.jobs`            | Independently detect scheduled jobs that missed their expected slot                 |
+| Cadence                | Job                        | What it does                                                                                     |
+| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------ |
+| every 5 min¹           | `poll.news`                | Finnhub headlines plus approved StockTwits access                                                |
+| every 5 min¹           | `poll.filings`             | EDGAR filings → 8-K MarketEvents (10-Q/10-K polled hourly)                                       |
+| every min (04-19 ET)²  | `poll.prices`              | Live held/scanner prices, move events, stop and target alerts                                    |
+| every 15 min¹          | `poll.earnings`            | Finnhub earnings calendar + actuals → EarningsBeat events                                        |
+| every 15 min¹          | `poll.marketNews`          | Market-wide news for the discovery scorer                                                        |
+| every 30 min (9-16 ET) | `poll.insiders`            | Finnhub insider transactions → InsiderCluster events                                             |
+| every 5 min (9-16 ET)  | `catalyst.run`             | Gated exceptional-opportunity fast lane — see [docs/CATALYST_ENGINE.md](docs/CATALYST_ENGINE.md) |
+| 06:00 ET               | `poll.macro`               | FRED macro series                                                                                |
+| 07:00 ET               | `poll.analysts`            | Finnhub analyst recommendation trends → AnalystUpgrade events                                    |
+| 07:00 ET               | `digest.morning`           | Pre-market digest → Telegram                                                                     |
+| 10:30, 13:30 ET        | `discover.compute.cached`  | Re-rank discovery from cached market data                                                        |
+| 16:30 ET               | `digest.evening`           | Post-close digest → Telegram                                                                     |
+| 16:45 ET               | `thesis.batch`             | Re-evaluate every open thesis                                                                    |
+| 17:00 ET               | `poll.eodHistory`          | Alpaca US + Yahoo Canada daily bars, with bounded Tiingo fallback                                |
+| 18:00 ET               | `discover.compute`         | Nightly discovery score recompute                                                                |
+| daily 01:30 ET         | `quality.lottery`          | Flag sub-$5, extreme-volatility lottery tickers                                                  |
+| daily 02:00 ET         | `poll.fundamentals`        | Refresh stale statements and ratios                                                              |
+| daily 03:00 ET         | `goals.snapshot`           | Persist goal progress and off-track transitions                                                  |
+| daily 03:15 ET         | `backfill.profiles`        | Enrich newly seeded US listings with sector and market cap                                       |
+| daily 03:30 ET         | `db.retention`             | Bounded retention sweep for operational tables (JobRun, outbox, old events)                      |
+| Sat 10:00 ET           | `digest.discovery`         | Saturday market-discovery digest                                                                 |
+| Sun 06:00 ET           | `poll.tickerUniverse`      | Refresh symbol universe (US + enabled Canadian exchanges)                                        |
+| Sun 20:00 ET           | `digest.weeklyDeepDive`    | Opus weekly cross-position synthesis                                                             |
+| 1st of month, 09:00 ET | `digest.monthlyAllocation` | Monthly allocation digest                                                                        |
+| every 30s³             | `alert.dispatch`           | Sweep MarketEvents into Alert Insights + durable queue                                           |
+| every 30s³             | `telegram.dispatch`        | Deliver and retry the durable Telegram outbox                                                    |
+| every 30 min           | `watchdog.jobs`            | Independently detect scheduled jobs that missed their expected slot                              |
 
 ¹ Thinned overnight (22:00-06:00 ET): the 5-minute pollers drop to every
 30 minutes and the 15-minute pollers to hourly (`lib/pollCadence.ts`).
