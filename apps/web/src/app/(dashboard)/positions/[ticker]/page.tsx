@@ -34,6 +34,7 @@ import {
 import { fetchLivePrice } from '@/lib/prices';
 import { cn } from '@/lib/utils';
 import { PositionActions } from './PositionActions';
+import { PurchaseHistory } from './PurchaseHistory';
 import { DbErrorBanner } from '@/components/DbErrorBanner';
 
 export const dynamic = 'force-dynamic';
@@ -58,23 +59,32 @@ interface RiskView {
 
 async function loadPositionResearch(positionId: number, ticker: string) {
   const thesis = await findThesisByPositionId(positionId);
-  const [evaluations, articles, price, accounts, fundamentals, metrics] = await Promise.all([
-    thesis ? listEvaluationsForThesis(thesis.id, 10) : Promise.resolve([]),
-    findArticlesByTicker({
-      ticker,
-      since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      limit: 10,
-    }),
-    fetchLivePrice(ticker),
-    listAccounts({ includeArchived: true }),
-    prisma.fundamentalsSnapshot.findMany({
-      where: { ticker },
-      orderBy: { periodEnd: 'desc' },
-      take: 4,
-    }),
-    prisma.tickerMetrics.findUnique({ where: { ticker } }),
-  ]);
-  return { thesis, evaluations, articles, price, accounts, fundamentals, metrics };
+  const [evaluations, articles, price, accounts, fundamentals, metrics, purchaseLots] =
+    await Promise.all([
+      thesis ? listEvaluationsForThesis(thesis.id, 10) : Promise.resolve([]),
+      findArticlesByTicker({
+        ticker,
+        since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        limit: 10,
+      }),
+      fetchLivePrice(ticker),
+      listAccounts({ includeArchived: true }),
+      prisma.fundamentalsSnapshot.findMany({
+        where: { ticker },
+        orderBy: { periodEnd: 'desc' },
+        take: 4,
+      }),
+      prisma.tickerMetrics.findUnique({ where: { ticker } }),
+      prisma.positionLot.findMany({
+        where: { positionId },
+        orderBy: [
+          { disposedAt: { sort: 'asc', nulls: 'first' } },
+          { acquiredAt: { sort: 'desc', nulls: 'last' } },
+          { id: 'desc' },
+        ],
+      }),
+    ]);
+  return { thesis, evaluations, articles, price, accounts, fundamentals, metrics, purchaseLots };
 }
 
 function PositionLoadFailure({ ticker, message }: { ticker: string; message: string }) {
@@ -170,7 +180,7 @@ export default async function PositionDetailPage({
       />
     );
   }
-  const { thesis, evaluations, articles, price, fundamentals, metrics } = research;
+  const { thesis, evaluations, articles, price, fundamentals, metrics, purchaseLots } = research;
   const accountMatch = research.accounts.find((account) => account.id === position.accountId);
   const positionAccount = accountMatch
     ? { id: accountMatch.id, name: accountMatch.name, type: accountMatch.type as string }
@@ -253,6 +263,22 @@ export default async function PositionDetailPage({
           }
         />
       </section>
+
+      <PurchaseHistory
+        positionId={position.id}
+        ticker={ticker}
+        currency={currency}
+        closed={position.closedAt !== null}
+        lots={purchaseLots.map((lot) => ({
+          id: lot.id,
+          acquiredAt: lot.acquiredAt?.toISOString().slice(0, 10) ?? null,
+          shares: lot.shares.toString(),
+          costPerShare: lot.costPerShare.toString(),
+          source: lot.source,
+          disposedAt: lot.disposedAt?.toISOString() ?? null,
+          note: lot.note,
+        }))}
+      />
 
       <FundamentalsSection snapshots={fundamentals} metrics={metrics} />
 

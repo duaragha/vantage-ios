@@ -10,7 +10,10 @@
 import { revalidatePath } from 'next/cache';
 import {
   Prisma,
+  PositionLotSource,
+  closePosition,
   prisma,
+  recomputePositionFromLots,
   shouldRefreshUniverseRow,
   upsertFromFinnhubProfile,
   upsertThesis,
@@ -23,6 +26,7 @@ import {
   type FinnhubProfile,
 } from '@vantage/sources';
 import { componentLogger } from '@vantage/notify';
+import { parsePositionLotInput } from '@/lib/positionLotInput';
 
 const log = componentLogger('web/actions/portfolio');
 
@@ -90,6 +94,10 @@ export interface PositionFormPayload {
    * The form sends the detected/overridden currency explicitly.
    */
   currency?: string | null;
+  /** Create adds a dated purchase lot; edit changes metadata only. */
+  intent?: 'create' | 'edit';
+  /** YYYY-MM-DD purchase date. Null is reserved for honest legacy/import gaps. */
+  purchaseDate?: string | null;
 }
 
 export interface ActionResult {
@@ -115,6 +123,8 @@ interface SanitizedPayload {
   accountId: number;
   /** Null when the form didn't send one — resolved later from ticker/account. */
   currency: 'CAD' | 'USD' | null;
+  intent: 'create' | 'edit';
+  purchaseDate: Date | null;
 }
 
 function normalizeCurrency(raw: string | null | undefined): 'CAD' | 'USD' | null {
@@ -126,6 +136,7 @@ function normalizeCurrency(raw: string | null | undefined): 'CAD' | 'USD' | null
 }
 
 function sanitize(payload: PositionFormPayload): SanitizedPayload | string {
+  const intent = payload.intent === 'create' ? 'create' : 'edit';
   const ticker = payload.ticker.trim().toUpperCase();
   if (!/^[A-Z.-]{1,8}$/.test(ticker)) {
     return 'ticker must be 1-8 chars, A-Z/./- only';
@@ -160,6 +171,16 @@ function sanitize(payload: PositionFormPayload): SanitizedPayload | string {
   if (stopLoss !== null && priceTarget !== null && stopLoss >= priceTarget) {
     return 'stop loss must be below the price target';
   }
+  const lotInput = parsePositionLotInput({
+    shares,
+    costPerShare: avgCost,
+    acquiredAt: payload.purchaseDate ?? null,
+    note: null,
+  });
+  if (!lotInput.ok) return lotInput.error;
+  if (intent === 'create' && lotInput.value.acquiredAtDate === null) {
+    return 'purchase date is required';
+  }
   return {
     ticker,
     name: payload.name?.trim() ?? null,
@@ -175,15 +196,16 @@ function sanitize(payload: PositionFormPayload): SanitizedPayload | string {
     thesisRiskFactors: (payload.thesisRiskFactors ?? []).map((s) => s.trim()).filter(Boolean),
     accountId,
     currency: normalizeCurrency(payload.currency),
+    intent,
+    purchaseDate: lotInput.value.acquiredAtDate,
   };
 }
 
 /**
  * Upsert a Position scoped to (accountId, ticker) (+ optional Thesis on the
  * same transaction). Rejects when the chosen account is archived or missing.
- * If an OPEN position already exists with the same (accountId, ticker), we
- * treat the call as an EDIT (matches prior behaviour of "ticker-as-PK"); the
- * caller never has to know the position id.
+ * Creating an already-held ticker adds a purchase lot without replacing the
+ * holding metadata. Editing changes metadata and leaves the lot ledger alone.
  */
 export async function upsertPosition(payload: PositionFormPayload): Promise<ActionResult> {
   const sanitized = sanitize(payload);
@@ -242,33 +264,9 @@ export async function upsertPosition(payload: PositionFormPayload): Promise<Acti
     const resolvedCurrency: 'CAD' | 'USD' =
       sanitized.currency ?? profileCurrency ?? suffixCurrency ?? accountCurrency ?? 'USD';
 
-    const position = existing
-      ? await prisma.position.update({
-          where: { id: existing.id },
-          data: {
-            shares: new Prisma.Decimal(sanitized.shares),
-            avgCost: new Prisma.Decimal(sanitized.avgCost),
-            currency: resolvedCurrency,
-            category: sanitized.category,
-            sector: resolvedSector,
-            notes: sanitized.notes,
-            stopLoss: sanitized.stopLoss === null ? null : new Prisma.Decimal(sanitized.stopLoss),
-            priceTarget:
-              sanitized.priceTarget === null ? null : new Prisma.Decimal(sanitized.priceTarget),
-            ...(existing.closedAt !== null ||
-            (existing.stopLoss === null ? null : Number(existing.stopLoss)) !== sanitized.stopLoss
-              ? { stopLossAlertedAt: null }
-              : {}),
-            ...(existing.closedAt !== null ||
-            (existing.priceTarget === null ? null : Number(existing.priceTarget)) !==
-              sanitized.priceTarget
-              ? { priceTargetAlertedAt: null }
-              : {}),
-            // Re-open if previously closed (user re-buying into the same lot).
-            closedAt: null,
-          },
-        })
-      : await prisma.position.create({
+    const position = await prisma.$transaction(async (tx) => {
+      if (!existing) {
+        const created = await tx.position.create({
           data: {
             ticker: sanitized.ticker,
             shares: new Prisma.Decimal(sanitized.shares),
@@ -283,6 +281,85 @@ export async function upsertPosition(payload: PositionFormPayload): Promise<Acti
             accountId: sanitized.accountId,
           },
         });
+        await tx.positionLot.create({
+          data: {
+            positionId: created.id,
+            acquiredAt: sanitized.purchaseDate,
+            shares: new Prisma.Decimal(sanitized.shares),
+            costPerShare: new Prisma.Decimal(sanitized.avgCost),
+            source: PositionLotSource.Manual,
+          },
+        });
+        return created;
+      }
+
+      if (sanitized.intent === 'create') {
+        if (existing.closedAt !== null) {
+          await tx.position.update({
+            where: { id: existing.id },
+            data: {
+              closedAt: null,
+              stopLossAlertedAt: null,
+              priceTargetAlertedAt: null,
+            },
+          });
+        }
+        await tx.positionLot.create({
+          data: {
+            positionId: existing.id,
+            acquiredAt: sanitized.purchaseDate,
+            shares: new Prisma.Decimal(sanitized.shares),
+            costPerShare: new Prisma.Decimal(sanitized.avgCost),
+            source: PositionLotSource.Manual,
+          },
+        });
+        return recomputePositionFromLots(existing.id, tx);
+      }
+
+      const thresholdData = {
+        ...(existing.closedAt !== null ||
+        (existing.stopLoss === null ? null : Number(existing.stopLoss)) !== sanitized.stopLoss
+          ? { stopLossAlertedAt: null }
+          : {}),
+        ...(existing.closedAt !== null ||
+        (existing.priceTarget === null ? null : Number(existing.priceTarget)) !==
+          sanitized.priceTarget
+          ? { priceTargetAlertedAt: null }
+          : {}),
+      };
+      const updated = await tx.position.update({
+        where: { id: existing.id },
+        data: {
+          currency: resolvedCurrency,
+          category: sanitized.category,
+          sector: resolvedSector,
+          notes: sanitized.notes,
+          stopLoss: sanitized.stopLoss === null ? null : new Prisma.Decimal(sanitized.stopLoss),
+          priceTarget:
+            sanitized.priceTarget === null ? null : new Prisma.Decimal(sanitized.priceTarget),
+          ...thresholdData,
+        },
+      });
+
+      // Migration normally guarantees this row. Keep a defensive opening lot
+      // for databases that were created between code and migration deploys.
+      const activeLots = await tx.positionLot.count({
+        where: { positionId: existing.id, disposedAt: null },
+      });
+      if (activeLots === 0 && existing.closedAt === null) {
+        await tx.positionLot.create({
+          data: {
+            positionId: existing.id,
+            acquiredAt: sanitized.purchaseDate,
+            shares: new Prisma.Decimal(sanitized.shares),
+            costPerShare: new Prisma.Decimal(sanitized.avgCost),
+            source: PositionLotSource.Legacy,
+          },
+        });
+        return recomputePositionFromLots(existing.id, tx);
+      }
+      return updated;
+    });
 
     // Upsert TickerUniverse from the same profile response if we fetched one.
     // User-typed name (if provided) beats Finnhub's name — lets the user
@@ -372,10 +449,7 @@ export async function closePositionAction(id: number): Promise<ActionResult> {
     return { ok: false, error: 'invalid position id' };
   }
   try {
-    const row = await prisma.position.update({
-      where: { id },
-      data: { closedAt: new Date() },
-    });
+    const row = await closePosition(id);
     revalidatePath('/portfolio');
     revalidatePath('/accounts');
     return { ok: true, positionId: row.id, ticker: row.ticker };

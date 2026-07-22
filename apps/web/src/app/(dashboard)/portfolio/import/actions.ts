@@ -11,7 +11,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { Prisma, prisma } from '@vantage/db';
+import {
+  aggregateActivePositionLots,
+  PositionLotSource,
+  Prisma,
+  prisma,
+  recomputePositionFromLots,
+} from '@vantage/db';
 import { deriveCurrency, exchangeFromSymbol } from '@vantage/sources';
 import { componentLogger } from '@vantage/notify';
 
@@ -112,33 +118,92 @@ export async function bulkImportPositions(
         where: {
           accountId_ticker: { accountId: targetAccountId, ticker },
         },
+        include: {
+          purchaseLots: {
+            where: { disposedAt: null },
+            orderBy: { id: 'asc' },
+          },
+        },
       });
       if (existing) {
-        await prisma.position.update({
-          where: { id: existing.id },
-          data: {
-            shares: new Prisma.Decimal(row.shares),
-            avgCost: new Prisma.Decimal(row.avgCost),
-            currency: rowCurrency,
-            category: row.category,
-            // Re-open if a previously-closed lot is being re-imported.
-            closedAt: null,
-            ...(existing.closedAt !== null
-              ? { stopLossAlertedAt: null, priceTargetAlertedAt: null }
-              : {}),
-          },
+        const activeAggregate = aggregateActivePositionLots(existing.purchaseLots);
+        const importedMatchesLedger =
+          activeAggregate !== null &&
+          Math.abs(activeAggregate.shares.toNumber() - row.shares) < 0.000001 &&
+          Math.abs(activeAggregate.avgCost.toNumber() - row.avgCost) < 0.000001;
+        const replaceableOpeningLot =
+          existing.purchaseLots.length === 1 &&
+          existing.purchaseLots[0]?.acquiredAt === null &&
+          existing.purchaseLots[0]?.source !== PositionLotSource.Manual;
+
+        if (
+          !existing.closedAt &&
+          existing.purchaseLots.length > 0 &&
+          !replaceableOpeningLot &&
+          !importedMatchesLedger
+        ) {
+          // A holdings snapshot cannot safely explain how a manual multi-lot
+          // ledger changed. Preserve the real history and make the user add or
+          // correct the missing purchase on the position page.
+          skipped.push(ticker);
+          continue;
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.position.update({
+            where: { id: existing.id },
+            data: {
+              currency: rowCurrency,
+              category: row.category,
+              ...(existing.closedAt !== null
+                ? { closedAt: null, stopLossAlertedAt: null, priceTargetAlertedAt: null }
+                : {}),
+            },
+          });
+
+          if (existing.closedAt || existing.purchaseLots.length === 0) {
+            await tx.positionLot.create({
+              data: {
+                positionId: existing.id,
+                shares: new Prisma.Decimal(row.shares),
+                costPerShare: new Prisma.Decimal(row.avgCost),
+                source: PositionLotSource.Import,
+              },
+            });
+            await recomputePositionFromLots(existing.id, tx);
+          } else if (replaceableOpeningLot && existing.purchaseLots[0]) {
+            await tx.positionLot.update({
+              where: { id: existing.purchaseLots[0].id },
+              data: {
+                shares: new Prisma.Decimal(row.shares),
+                costPerShare: new Prisma.Decimal(row.avgCost),
+                source: PositionLotSource.Import,
+              },
+            });
+            await recomputePositionFromLots(existing.id, tx);
+          }
         });
         updated.push(ticker);
       } else {
-        await prisma.position.create({
-          data: {
-            ticker,
-            shares: new Prisma.Decimal(row.shares),
-            avgCost: new Prisma.Decimal(row.avgCost),
-            currency: rowCurrency,
-            category: row.category,
-            accountId: targetAccountId,
-          },
+        await prisma.$transaction(async (tx) => {
+          const position = await tx.position.create({
+            data: {
+              ticker,
+              shares: new Prisma.Decimal(row.shares),
+              avgCost: new Prisma.Decimal(row.avgCost),
+              currency: rowCurrency,
+              category: row.category,
+              accountId: targetAccountId,
+            },
+          });
+          await tx.positionLot.create({
+            data: {
+              positionId: position.id,
+              shares: new Prisma.Decimal(row.shares),
+              costPerShare: new Prisma.Decimal(row.avgCost),
+              source: PositionLotSource.Import,
+            },
+          });
         });
         created.push(ticker);
       }

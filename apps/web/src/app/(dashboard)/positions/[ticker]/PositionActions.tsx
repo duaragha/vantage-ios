@@ -102,7 +102,7 @@ export function PositionActions({
       <Drawer
         open={open}
         title={`Edit ${ticker}`}
-        description="Update the lot, alert thresholds, and thesis. Ticker is immutable."
+        description="Update holding details, alert thresholds, and thesis. Shares and average cost are managed in Purchase history."
         onClose={() => setOpen(false)}
       >
         <EditPositionBody

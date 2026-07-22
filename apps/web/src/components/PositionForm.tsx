@@ -15,6 +15,7 @@ import { suggestAccountForTicker } from '@/app/(dashboard)/accounts/actions';
 import type { AccountListItem } from '@/app/(dashboard)/accounts/data';
 import { AccountPicker } from '@/components/AccountPicker';
 import { cn } from '@/lib/utils';
+import { torontoDateKey } from '@/lib/positionLotInput';
 
 export interface PositionFormPrefill {
   ticker?: string;
@@ -32,6 +33,7 @@ export interface PositionFormPrefill {
   riskFactors?: string[];
   fromInsightId?: number;
   accountId?: number;
+  purchaseDate?: string;
 }
 
 export function PositionForm({
@@ -56,6 +58,9 @@ export function PositionForm({
   const [name, setName] = React.useState(prefill?.name ?? '');
   const [shares, setShares] = React.useState(prefill?.shares ?? '');
   const [avgCost, setAvgCost] = React.useState(prefill?.avgCost ?? '');
+  const [purchaseDate, setPurchaseDate] = React.useState(
+    prefill?.purchaseDate ?? (mode === 'create' ? torontoDateKey() : ''),
+  );
   const [category, setCategory] = React.useState(prefill?.category ?? 'Conviction');
   const [sector, setSector] = React.useState(prefill?.sector ?? '');
   const [notes, setNotes] = React.useState(prefill?.notes ?? '');
@@ -244,6 +249,8 @@ export function PositionForm({
       thesisSummary: thesisSummary || undefined,
       thesisPillars: pillars,
       thesisRiskFactors: risks,
+      intent: mode,
+      purchaseDate: mode === 'create' ? purchaseDate : null,
       ...(accountId !== null ? { accountId } : {}),
     } as Parameters<typeof upsertPosition>[0] & { accountId?: number };
     try {
@@ -317,12 +324,13 @@ export function PositionForm({
               onBlur={() => runLookup(ticker)}
               placeholder="AAPL"
               className="cc-input font-mono uppercase flex-1"
+              disabled={mode === 'edit'}
               required
             />
             <button
               type="button"
               onClick={() => void runLookup(ticker, true)}
-              disabled={!ticker || lookingUp}
+              disabled={mode === 'edit' || !ticker || lookingUp}
               title="Re-fetch name + sector from Finnhub (overwrites current values)"
               className="cc-input flex items-center justify-center px-3 text-muted-foreground transition hover:text-[var(--cc-accent)] disabled:opacity-40"
               style={{ width: '2.25rem' }}
@@ -355,7 +363,9 @@ export function PositionForm({
             <option>Other</option>
           </select>
         </Field>
-        <Field label="Shares">
+        <Field
+          label={mode === 'edit' ? 'Shares · managed by purchase history' : 'Shares purchased'}
+        >
           <input
             value={shares}
             onChange={(e) => setShares(e.target.value)}
@@ -363,10 +373,13 @@ export function PositionForm({
             step="0.0001"
             inputMode="decimal"
             className="cc-input font-mono tabular-nums"
+            disabled={mode === 'edit'}
             required
           />
         </Field>
-        <Field label={`Average cost (${currency})`}>
+        <Field
+          label={`${mode === 'edit' ? 'Average cost · calculated' : 'Cost per share'} (${currency})`}
+        >
           <div className="flex gap-2">
             <input
               value={avgCost}
@@ -375,6 +388,7 @@ export function PositionForm({
               step="0.01"
               inputMode="decimal"
               className="cc-input font-mono tabular-nums flex-1"
+              disabled={mode === 'edit'}
               required
             />
             <div className="flex shrink-0 gap-1">
@@ -399,6 +413,18 @@ export function PositionForm({
             </div>
           </div>
         </Field>
+        {mode === 'create' && (
+          <Field label="Purchase date">
+            <input
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+              type="date"
+              max={torontoDateKey()}
+              className="cc-input font-mono tabular-nums"
+              required
+            />
+          </Field>
+        )}
         <Field label="Sector (optional)">
           <input
             value={sector}
