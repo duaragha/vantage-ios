@@ -1,21 +1,15 @@
 /**
  * Digest dispatch worker.
  *
- * Thin handler: call buildDigest() in @vantage/core, render the result
- * with formatDigestForTelegram, ship via @vantage/notify. Wrapped by
- * runJob() in routes/jobs.ts and cron.ts for idempotency.
+ * Thin handler: call buildDigest() in @vantage/core and queue a durable
+ * Vantage app notification according to the user's routing preferences.
  */
 
 import type { FastifyBaseLogger } from 'fastify';
-import {
-  buildDigest,
-  formatDigestForTelegram,
-  type DigestKind,
-  type DigestResult,
-  type DigestKindLabel,
-} from '@vantage/core';
-import { getNotificationPreferences, queueTelegramDelivery } from '@vantage/db';
+import { buildDigest, type DigestKind, type DigestResult } from '@vantage/core';
+import { getNotificationPreferences, queueAppNotification } from '@vantage/db';
 import { sendSelfAlert } from '@vantage/notify';
+import { buildDigestAppNotification } from '../lib/appNotificationContent.js';
 import {
   includeInsightInNotification,
   shouldQueueDigestNotification,
@@ -29,15 +23,11 @@ export interface DigestDispatchResult {
   failedSources: string[];
   tokens: DigestResult['tokens'];
   llmCallIds: number[];
-  telegram: { ok: true; queued: boolean; deliveryId: number | null };
-}
-
-function deepLinkBase(): string {
-  return process.env['DASHBOARD_BASE_URL'] ?? 'http://localhost:3000';
+  appNotification: { ok: true; queued: boolean; deliveryId: number | null };
 }
 
 /**
- * Build the digest and persist its Telegram delivery. The dispatcher owns the
+ * Build the digest and persist its app notification. The dispatcher owns the
  * network attempt so transient failures cannot lose a completed digest.
  */
 export async function runDigest(
@@ -62,22 +52,12 @@ export async function runDigest(
     includeInsightInNotification(insight, preferences),
   );
   const shouldQueue = shouldQueueDigestNotification(preferences, notificationInsights.length);
-  const markdown = formatDigestForTelegram(
-    kind as DigestKindLabel,
-    preferences.scheduledDigests ? digest.summary : 'New actionable recommendations are ready.',
-    notificationInsights,
-    {
-      deepLinkBase: deepLinkBase(),
-      failedSources: digest.failedSources,
-    },
-  );
+  const content = buildDigestAppNotification(kind, digest.summary, notificationInsights);
 
   const delivery = shouldQueue
-    ? await queueTelegramDelivery({
-        dedupeKey: digestDeliveryKey(kind, digest),
-        text: markdown,
-        parseMode: 'Markdown',
-        disableWebPagePreview: true,
+    ? await queueAppNotification({
+        dedupeKey: `app:${digestDeliveryKey(kind, digest)}`,
+        ...content,
         expiresAt: new Date(Date.now() + digestExpiryMs(kind)),
       })
     : null;
@@ -100,11 +80,13 @@ export async function runDigest(
       insights: digest.insights.length,
       failedSources: digest.failedSources,
     },
-    delivery ? 'digest queued for Telegram delivery' : 'digest notification muted by settings',
+    delivery
+      ? 'digest queued for Vantage app delivery'
+      : 'digest app notification muted by settings',
   );
   return {
     ...baseResult,
-    telegram: { ok: true, queued: delivery !== null, deliveryId: delivery?.id ?? null },
+    appNotification: { ok: true, queued: delivery !== null, deliveryId: delivery?.id ?? null },
   };
 }
 

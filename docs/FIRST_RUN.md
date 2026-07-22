@@ -142,8 +142,8 @@ health at a glance.
 
 ## 6. If something goes wrong
 
-- **No Telegram message** → see
-  [TELEGRAM_SETUP.md](./TELEGRAM_SETUP.md) §3 verification.
+- **No Vantage notification** → check the Home Screen install, device status,
+  and test flow in [APP_NOTIFICATIONS.md](./APP_NOTIFICATIONS.md).
 - **Bootstrap returns 500** → tail the worker log. Most common cause is
   a missing data-source API key in `.env`.
 - **Digest returns `{ok:false, reason:'throttled'}`** → the same job

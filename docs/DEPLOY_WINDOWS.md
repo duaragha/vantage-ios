@@ -36,7 +36,8 @@ remote containers. Required production values include:
 | `FINNHUB_API_KEY`, `TIINGO_API_KEY`, `FRED_API_KEY` | Market and macro sources                                                     |
 | `ALPACA_KEY_ID`, `ALPACA_SECRET_KEY`                | US live-price source                                                         |
 | `TAVILY_API_KEY`                                    | Optional cited news search in Chat                                           |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`            | Dedicated Vantage alert bot                                                  |
+| `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`       | Vantage app notification signing keys                                        |
+| `WEB_PUSH_SUBJECT`                                  | HTTPS Vantage origin used as the VAPID subject                               |
 | `EDGAR_USER_AGENT`                                  | SEC-required descriptive user agent and email                                |
 | `DASHBOARD_BASE_URL`                                | `https://raghavsgamingpc.tail4d6220.ts.net:3500`                             |
 | `TZ`                                                | `America/Toronto`                                                            |
@@ -49,8 +50,8 @@ chmod 600 .env
 
 The guarded deploy script rejects group- or world-readable `.env` permissions.
 
-Telegram delivery is configured only through the two environment variables.
-See [`TELEGRAM_SETUP.md`](./TELEGRAM_SETUP.md).
+App notification setup and iPhone installation are documented in
+[`APP_NOTIFICATIONS.md`](./APP_NOTIFICATIONS.md).
 
 ## Pre-deploy verification
 

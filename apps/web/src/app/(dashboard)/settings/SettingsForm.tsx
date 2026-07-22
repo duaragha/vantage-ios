@@ -13,7 +13,6 @@ import {
   Newspaper,
   Radar,
   Scale,
-  Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -24,13 +23,13 @@ import {
   changePassword,
   recomputeDiscoveryNow,
   saveSettings,
-  sendTestNotification,
+  type AppNotificationConfig,
   type DiscoveryWeightsForm,
   type ExchangeCode,
-  type NotificationDeliveryStatus,
   type SettingsFormPayload,
 } from './actions';
 import { cn } from '@/lib/utils';
+import { AppNotificationSetup } from './AppNotificationSetup';
 
 // Grouped for UX. Percentages in headers are advisory — the user can rebalance.
 const DISCOVERY_GROUPS: ReadonlyArray<{
@@ -108,18 +107,15 @@ const SETTINGS_CATEGORIES: ReadonlyArray<{
 
 export function SettingsForm({
   initial,
-  notificationStatus,
+  notificationConfig,
 }: {
   initial: SettingsFormPayload;
-  notificationStatus: NotificationDeliveryStatus;
+  notificationConfig: AppNotificationConfig;
 }): React.ReactElement {
   const [v, setV] = React.useState(initial);
   const [saving, setSaving] = React.useState(false);
   const [msg, setMsg] = React.useState<{ tone: 'ok' | 'err'; text: string } | null>(null);
   const [activeCategory, setActiveCategory] = React.useState<SettingsCategory>('notifications');
-  const [delivery, setDelivery] = React.useState(notificationStatus);
-  const [testing, setTesting] = React.useState(false);
-  const [testMsg, setTestMsg] = React.useState<{ tone: 'ok' | 'err'; text: string } | null>(null);
 
   const on = <K extends keyof SettingsFormPayload>(key: K, val: SettingsFormPayload[K]) =>
     setV({ ...v, [key]: val });
@@ -179,24 +175,6 @@ export function SettingsForm({
       setMsg({ tone: 'err', text: 'Kill switch could not be changed.' });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const sendTest = async () => {
-    setTesting(true);
-    setTestMsg(null);
-    try {
-      const res = await sendTestNotification();
-      if (res.ok) {
-        setDelivery((current) => ({ ...current, state: 'ready' }));
-        setTestMsg({ tone: 'ok', text: 'Sent. Check Telegram on your phone.' });
-      } else {
-        setTestMsg({ tone: 'err', text: res.error ?? 'Test notification failed.' });
-      }
-    } catch {
-      setTestMsg({ tone: 'err', text: 'Test notification failed.' });
-    } finally {
-      setTesting(false);
     }
   };
 
@@ -270,14 +248,7 @@ export function SettingsForm({
 
           <div className="flex min-w-0 flex-col gap-7 p-4 sm:p-6">
             {activeCategory === 'notifications' && (
-              <NotificationSection
-                values={v}
-                delivery={delivery}
-                testing={testing}
-                testMsg={testMsg}
-                onTest={sendTest}
-                onChange={on}
-              />
+              <NotificationSection values={v} config={notificationConfig} onChange={on} />
             )}
 
             {activeCategory === 'portfolio' && (
@@ -444,82 +415,16 @@ export function SettingsForm({
 
 function NotificationSection({
   values,
-  delivery,
-  testing,
-  testMsg,
-  onTest,
+  config,
   onChange,
 }: {
   values: SettingsFormPayload;
-  delivery: NotificationDeliveryStatus;
-  testing: boolean;
-  testMsg: { tone: 'ok' | 'err'; text: string } | null;
-  onTest: () => void;
+  config: AppNotificationConfig;
   onChange: <K extends keyof SettingsFormPayload>(key: K, value: SettingsFormPayload[K]) => void;
 }): React.ReactElement {
-  const ready = delivery.state === 'ready';
-  const stateLabel =
-    delivery.state === 'ready'
-      ? 'Connected'
-      : delivery.state === 'setup-required'
-        ? 'Needs setup'
-        : 'Worker unavailable';
-
   return (
     <>
-      <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[var(--cc-accent)]/[0.11] via-white/[0.035] to-transparent">
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.09] bg-black/20 text-[var(--cc-accent)]">
-              <Send className="size-5" />
-            </span>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold">Telegram delivery</h3>
-                <span
-                  className={cn(
-                    'rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em]',
-                    ready
-                      ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
-                      : 'border-amber-400/25 bg-amber-400/10 text-amber-300',
-                  )}
-                >
-                  {stateLabel}
-                </span>
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Vantage uses Telegram for reliable iPhone alerts while the app runs through
-                LiveContainer.
-              </p>
-              {ready && (delivery.pending > 0 || delivery.dead > 0) && (
-                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                  {delivery.pending} pending · {delivery.dead} failed
-                </p>
-              )}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onTest}
-            disabled={testing || !ready}
-            className="min-h-11 shrink-0 rounded-xl border border-white/[0.1] bg-black/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground transition active:scale-[0.98] hover:bg-white/[0.06] disabled:opacity-40"
-          >
-            {testing ? 'Sending…' : 'Send test'}
-          </button>
-        </div>
-        {testMsg && (
-          <div
-            className={cn(
-              'border-t px-4 py-2.5 text-xs sm:px-5',
-              testMsg.tone === 'ok'
-                ? 'border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-300'
-                : 'border-rose-400/15 bg-rose-400/[0.06] text-rose-300',
-            )}
-          >
-            {testMsg.text}
-          </div>
-        )}
-      </section>
+      <AppNotificationSetup config={config} />
 
       <Section title="Recommendation alerts">
         <div className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.07] bg-black/20">
@@ -558,10 +463,10 @@ function NotificationSection({
       <div className="flex items-start gap-3 rounded-2xl border border-emerald-400/10 bg-emerald-400/[0.035] p-4">
         <Activity className="mt-0.5 size-4 shrink-0 text-emerald-300" />
         <div>
-          <p className="text-xs font-medium text-foreground/90">Critical alerts stay on</p>
+          <p className="text-xs font-medium text-foreground/90">Built for useful interruptions</p>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            Stop losses, price targets, thesis breaks, goal warnings, and system failures remain
-            protected from accidental muting.
+            Vantage stores every recommendation in Insights even when its phone notification is
+            muted, so these controls never hide the underlying research.
           </p>
         </div>
       </div>

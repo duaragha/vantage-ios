@@ -76,6 +76,7 @@ EMBEDDER_SECRET=<same generated value as embed-api>
 DASHBOARD_BASE_URL=https://${{web.RAILWAY_PUBLIC_DOMAIN}}
 CAPACITOR_SERVER_URL=https://${{web.RAILWAY_PUBLIC_DOMAIN}}
 SESSION_SECRET=<long random value>
+WEB_PUSH_PUBLIC_KEY=<shared VAPID public key>
 ```
 
 Keep the existing dashboard password/session, Codemagic and provider variables
@@ -94,11 +95,15 @@ WORKER_PORT=3001
 WORKER_HOST=0.0.0.0
 WORKER_SECRET=<same generated value as web>
 DASHBOARD_BASE_URL=https://${{web.RAILWAY_PUBLIC_DOMAIN}}
+WEB_PUSH_PUBLIC_KEY=<same VAPID public key as web>
+WEB_PUSH_PRIVATE_KEY=<VAPID private key, worker only>
+WEB_PUSH_SUBJECT=https://${{web.RAILWAY_PUBLIC_DOMAIN}}
 ```
 
-Copy the existing Anthropic, Finnhub, Tiingo, FRED, Alpaca, Tavily, Telegram
-and optional provider values. Disabled integrations should remain explicitly
-disabled instead of receiving placeholder keys.
+Copy the existing Anthropic, Finnhub, Tiingo, FRED, Alpaca, Tavily and optional
+provider values. Leave legacy Telegram variables unset when Vantage app push is
+the only phone channel. Disabled integrations should remain explicitly disabled
+instead of receiving placeholder keys.
 
 ### Embed API
 
@@ -158,7 +163,7 @@ Then verify in the UI:
 - dashboard login and portfolio data
 - one chat question that needs article context, with cited semantic results
 - manual provider poll and one normal scheduler cycle
-- alert evaluation and Telegram outbox delivery
+- Vantage app subscription, test notification, and durable outbox delivery
 - SideStore/mobile endpoints using the Railway public base URL
 - `/ops` cost totals and both LLM spend caps
 

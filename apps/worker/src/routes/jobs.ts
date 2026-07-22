@@ -37,9 +37,22 @@ import { bootstrapTicker } from '../jobs/bootstrap.js';
 import { backfillProfiles } from '../jobs/backfillProfiles.js';
 import { seedEtfUniverse } from '../jobs/seedEtfUniverse.js';
 import { runTelegramDispatch } from '../jobs/dispatchTelegram.js';
+import {
+  dispatchAppNotifications,
+  runAppNotificationDispatch,
+} from '../jobs/dispatchAppNotifications.js';
 import { parseBacktestRequest } from '../lib/backtestRequest.js';
 import { randomUUID } from 'node:crypto';
-import { sendMessage, verifyChatId } from '@vantage/notify';
+import { isAppPushConfigured, sendMessage, verifyChatId } from '@vantage/notify';
+import {
+  AppNotificationDeliveryStatus,
+  countActiveWebPushSubscriptions,
+  getNotificationPreferences,
+  prisma,
+  queueAppNotification,
+} from '@vantage/db';
+import { buildRecommendationAppNotification } from '../lib/appNotificationContent.js';
+import { includeInsightInNotification } from '../lib/notificationRouting.js';
 
 export const jobsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.addHook('preHandler', requireWorkerSecret);
@@ -285,6 +298,47 @@ export const jobsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     return reply.send(outcome);
   });
 
+  fastify.post('/jobs/app-notifications/dispatch', async (_req, reply) => {
+    const outcome = await runJob({
+      name: 'app-notification.dispatch',
+      bucketSeconds: 30,
+      log: fastify.log,
+      handler: () => runAppNotificationDispatch(fastify.log),
+    });
+    return reply.send(outcome);
+  });
+
+  fastify.post('/jobs/app-notifications/test', async (_req, reply) => {
+    if (!isAppPushConfigured()) {
+      return reply.code(503).send({ ok: false, error: 'Vantage app push is not configured' });
+    }
+    if ((await countActiveWebPushSubscriptions()) === 0) {
+      return reply.code(409).send({ ok: false, error: 'No Vantage app is subscribed' });
+    }
+    const delivery = await queueAppNotification({
+      dedupeKey: `app:test:${randomUUID()}`,
+      title: 'Vantage notifications are on',
+      body: 'Buy, rebalance, and exceptional-opportunity alerts can now reach this iPhone.',
+      url: '/settings',
+      tag: 'vantage-test',
+      urgency: 'high',
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
+    await dispatchAppNotifications(fastify.log, 100);
+    const delivered = await prisma.appNotificationDelivery.findUnique({
+      where: { id: delivery.id },
+      select: { status: true, lastError: true },
+    });
+    if (delivered?.status !== AppNotificationDeliveryStatus.Sent) {
+      return reply.code(502).send({
+        ok: false,
+        error: delivered?.lastError ?? 'The Vantage app notification could not be delivered',
+        deliveryId: delivery.id,
+      });
+    }
+    return reply.send({ ok: true, deliveryId: delivery.id });
+  });
+
   // Deterministic end-to-end smoke for initial BotFather setup. This bypasses
   // the durable queue intentionally so old pending alerts cannot hide whether
   // the newly supplied token and chat id work right now.
@@ -439,6 +493,17 @@ export const jobsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
             ? { requireViolation: body.requireViolation }
             : {}),
         });
+        const preferences = await getNotificationPreferences();
+        let appNotificationsQueued = 0;
+        for (const insight of result.insights) {
+          if (!includeInsightInNotification(insight, preferences)) continue;
+          await queueAppNotification({
+            dedupeKey: `app:insight:${insight.id}`,
+            ...buildRecommendationAppNotification(insight),
+            expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+          });
+          appNotificationsQueued += 1;
+        }
         return {
           insightsCreated: result.insights.length,
           insightIds: result.insights.map((i) => i.id),
@@ -448,6 +513,7 @@ export const jobsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
           skipReason: result.skipReason ?? null,
           tokens: result.tokens,
           llmCallIds: result.llmCallIds,
+          appNotificationsQueued,
         };
       },
     });

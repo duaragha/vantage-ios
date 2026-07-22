@@ -6,9 +6,9 @@ import * as React from 'react';
 import { getSettings } from '@vantage/db';
 import { SettingsForm } from './SettingsForm';
 import {
-  getNotificationDeliveryStatus,
+  getAppNotificationConfig,
+  type AppNotificationConfig,
   type DiscoveryWeightsForm,
-  type NotificationDeliveryStatus,
 } from './actions';
 import { DbErrorBanner } from '@/components/DbErrorBanner';
 
@@ -64,21 +64,21 @@ function readExchanges(raw: unknown): ('US' | 'TO' | 'NE' | 'V')[] {
 export default async function SettingsPage(): Promise<React.ReactElement> {
   let settings: Awaited<ReturnType<typeof getSettings>> = null;
   let dbError: string | null = null;
-  let notificationStatus: NotificationDeliveryStatus = {
-    state: 'unavailable',
-    pending: 0,
-    dead: 0,
+  let notificationConfig: AppNotificationConfig = {
+    configured: false,
+    publicKey: null,
+    activeSubscriptions: 0,
   };
-  const notificationStatusPromise = getNotificationDeliveryStatus();
+  const notificationConfigPromise = getAppNotificationConfig();
   try {
     settings = await getSettings();
   } catch (err) {
     dbError = err instanceof Error ? err.message : 'database unreachable';
   }
   try {
-    notificationStatus = await notificationStatusPromise;
+    notificationConfig = await notificationConfigPromise;
   } catch {
-    notificationStatus = { state: 'unavailable', pending: 0, dead: 0 };
+    notificationConfig = { configured: false, publicKey: null, activeSubscriptions: 0 };
   }
 
   return (
@@ -97,7 +97,7 @@ export default async function SettingsPage(): Promise<React.ReactElement> {
 
       {settings ? (
         <SettingsForm
-          notificationStatus={notificationStatus}
+          notificationConfig={notificationConfig}
           initial={{
             monthlyBudget: Number(settings.monthlyBudget),
             singlePositionCapPct: settings.singlePositionCapPct,

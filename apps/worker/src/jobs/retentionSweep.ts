@@ -7,12 +7,12 @@
  * Safety properties:
  *   - product tables are never touched
  *   - JobRun keeps the newest row per name regardless of age
- *   - pending/sending Telegram deliveries are never touched
+ *   - pending/sending Telegram and app-notification deliveries are never touched
  *   - cited articles are never deleted (Insight + ChatMessage citations)
  *   - every delete is capped per table per run (MAX_DELETES_PER_TABLE)
  */
 
-import { prisma, TelegramDeliveryStatus } from '@vantage/db';
+import { AppNotificationDeliveryStatus, prisma, TelegramDeliveryStatus } from '@vantage/db';
 import { CATALYST_KINDS } from '@vantage/core';
 import type { FastifyBaseLogger } from 'fastify';
 import {
@@ -24,6 +24,7 @@ import {
 export interface RetentionSweepResult {
   jobRunsDeleted: number;
   telegramDeliveriesDeleted: number;
+  appNotificationDeliveriesDeleted: number;
   llmCallsDeleted: number;
   marketEventsDeleted: number;
   tier3ArticlesDeleted: number;
@@ -75,6 +76,31 @@ async function deleteOldTelegramDeliveries(cutoffs: RetentionCutoffs): Promise<n
   if (candidates.length === 0) return 0;
   const res = await prisma.telegramDelivery.deleteMany({
     where: { id: { in: candidates.map((c) => c.id) } },
+  });
+  return res.count;
+}
+
+async function deleteOldAppNotificationDeliveries(cutoffs: RetentionCutoffs): Promise<number> {
+  const candidates = await prisma.appNotificationDelivery.findMany({
+    where: {
+      OR: [
+        {
+          status: AppNotificationDeliveryStatus.Sent,
+          sentAt: { lt: cutoffs.appNotificationSentBefore },
+        },
+        {
+          status: AppNotificationDeliveryStatus.Dead,
+          updatedAt: { lt: cutoffs.appNotificationDeadBefore },
+        },
+      ],
+    },
+    select: { id: true },
+    orderBy: { id: 'asc' },
+    take: MAX_DELETES_PER_TABLE,
+  });
+  if (candidates.length === 0) return 0;
+  const res = await prisma.appNotificationDelivery.deleteMany({
+    where: { id: { in: candidates.map((candidate) => candidate.id) } },
   });
   return res.count;
 }
@@ -175,6 +201,7 @@ export async function retentionSweep(
   const result: RetentionSweepResult = {
     jobRunsDeleted: await deleteOldJobRuns(cutoffs),
     telegramDeliveriesDeleted: await deleteOldTelegramDeliveries(cutoffs),
+    appNotificationDeliveriesDeleted: await deleteOldAppNotificationDeliveries(cutoffs),
     llmCallsDeleted: await deleteOldLlmCalls(cutoffs),
     marketEventsDeleted: await deleteOldProcessedMarketEvents(cutoffs),
     tier3ArticlesDeleted: await deleteOldUncitedTier3Articles(cutoffs),

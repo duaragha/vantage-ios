@@ -14,7 +14,12 @@
  */
 
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { prisma, startOfZonedDay, TelegramDeliveryStatus } from '@vantage/db';
+import {
+  AppNotificationDeliveryStatus,
+  prisma,
+  startOfZonedDay,
+  TelegramDeliveryStatus,
+} from '@vantage/db';
 import { CRON_SPECS } from '../cron.js';
 import { requireWorkerSecret } from '../lib/auth.js';
 import { lastIdleSkipAt } from '../lib/jobTicks.js';
@@ -92,9 +97,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
       // the payload stays honest about what actually ran.
       const idleSkipAt = lastIdleSkipAt(spec.name);
       const effectiveSuccessAt =
-        idleSkipAt && (!endedAt || idleSkipAt.getTime() > endedAt.getTime())
-          ? idleSkipAt
-          : endedAt;
+        idleSkipAt && (!endedAt || idleSkipAt.getTime() > endedAt.getTime()) ? idleSkipAt : endedAt;
       const ageMs = endedAt ? now.getTime() - endedAt.getTime() : null;
       const runningAgeMs = runningAt ? now.getTime() - runningAt.getTime() : null;
       return [
@@ -121,7 +124,15 @@ export const healthRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
     });
     const llmCostToday = Number(todayAgg._sum.costUsd ?? 0);
 
-    const [telegramPending, telegramDead, oldestTelegramPending] = await Promise.all([
+    const [
+      telegramPending,
+      telegramDead,
+      oldestTelegramPending,
+      appPushPending,
+      appPushDead,
+      oldestAppPushPending,
+      appPushSubscriptions,
+    ] = await Promise.all([
       prisma.telegramDelivery.count({
         where: { status: TelegramDeliveryStatus.Pending },
       }),
@@ -133,9 +144,24 @@ export const healthRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
         orderBy: { createdAt: 'asc' },
         select: { createdAt: true },
       }),
+      prisma.appNotificationDelivery.count({
+        where: { status: AppNotificationDeliveryStatus.Pending },
+      }),
+      prisma.appNotificationDelivery.count({
+        where: { status: AppNotificationDeliveryStatus.Dead },
+      }),
+      prisma.appNotificationDelivery.findFirst({
+        where: { status: AppNotificationDeliveryStatus.Pending },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true },
+      }),
+      prisma.webPushSubscription.count({ where: { disabledAt: null } }),
     ]);
     const telegramConfigured = Boolean(
       process.env['TELEGRAM_BOT_TOKEN'] && process.env['TELEGRAM_CHAT_ID'],
+    );
+    const appPushConfigured = Boolean(
+      process.env['WEB_PUSH_PUBLIC_KEY'] && process.env['WEB_PUSH_PRIVATE_KEY'],
     );
 
     return reply.code(jobsHealthy ? 200 : 503).send({
@@ -156,6 +182,14 @@ export const healthRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
         pending: telegramPending,
         dead: telegramDead,
         oldestPendingAt: oldestTelegramPending?.createdAt.toISOString() ?? null,
+      },
+      appNotifications: {
+        ok: appPushConfigured && appPushSubscriptions > 0 && appPushDead === 0,
+        configured: appPushConfigured,
+        subscriptions: appPushSubscriptions,
+        pending: appPushPending,
+        dead: appPushDead,
+        oldestPendingAt: oldestAppPushPending?.createdAt.toISOString() ?? null,
       },
       lastRuns,
     });

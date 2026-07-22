@@ -8,6 +8,14 @@ The iPhone can reach this public Railway deployment without joining Raghav's
 tailnet. Codemagic builds the IPA, and Vantage's live source follows the newest
 finished build automatically.
 
+## Notifications
+
+LiveContainer guest apps cannot receive remote push notifications. Keep this
+IPA for normal use, but install the same Vantage site from Safari with Share →
+Add to Home Screen for background buy, rebalance, and exceptional-opportunity
+alerts. Open that Home Screen icon, then enable notifications in Vantage
+Settings. The alerts are sent by Vantage and open the matching insight.
+
 ## LiveContainer source
 
 Add the live source below once. It follows the newest finished Codemagic IPA,

@@ -46,3 +46,14 @@ export {
   type SendSelfAlertDependencies,
   type SendSelfAlertResult,
 } from './selfAlert.js';
+
+export {
+  isAppPushConfigured,
+  sendAppPush,
+  type AppPushFailure,
+  type AppPushFailureReason,
+  type AppPushPayload,
+  type AppPushResult,
+  type AppPushSubscriptionTarget,
+  type SendAppPushOptions,
+} from './webPush.js';

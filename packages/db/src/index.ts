@@ -12,6 +12,7 @@ export type { DbClient } from './client.js';
 // Generated Prisma types + enums (values + types re-exported for consumers).
 export {
   AccountType,
+  AppNotificationDeliveryStatus,
   Confidence,
   ContributionFrequency,
   EventKind,
@@ -30,6 +31,7 @@ export {
 } from '@prisma/client';
 export type {
   Account,
+  AppNotificationDelivery,
   AnalystRecommendation,
   Article,
   BacktestRun,
@@ -57,10 +59,12 @@ export type {
   TelegramDelivery,
   UserSettings,
   Watchlist,
+  WebPushSubscription,
 } from '@prisma/client';
 
 // Domain CRUD helpers.
 export * from './analystRecommendations.js';
+export * from './appNotificationDeliveries.js';
 export * from './articles.js';
 export * from './dailyBars.js';
 export * from './discoveryScores.js';
@@ -77,4 +81,5 @@ export * from './theses.js';
 export * from './tickerUniverse.js';
 export * from './telegramDeliveries.js';
 export * from './watchlist.js';
+export * from './webPushSubscriptions.js';
 export * from './zonedTime.js';

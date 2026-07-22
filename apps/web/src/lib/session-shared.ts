@@ -11,6 +11,9 @@ export function isPublicPath(pathname: string): boolean {
   if (pathname === '/login') return true;
   if (pathname === '/api/health') return true;
   if (pathname === '/api/auth/login') return true;
+  if (pathname === '/manifest.webmanifest') return true;
+  if (pathname === '/sw.js') return true;
+  if (pathname === '/icon-512.png') return true;
   if (pathname.startsWith('/api/v1/sidestore/')) return true;
   if (pathname.startsWith('/_next/')) return true;
   if (pathname.startsWith('/favicon')) return true;

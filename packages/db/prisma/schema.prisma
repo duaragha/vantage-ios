@@ -401,6 +401,56 @@ enum TelegramDeliveryStatus {
   Dead
 }
 
+/// One browser/device registration for Vantage Web Push. iOS creates this
+/// only when Vantage is installed as a Home Screen web app and the user taps
+/// the enable button. Invalid endpoints are disabled instead of deleted so
+/// delivery failures remain auditable.
+model WebPushSubscription {
+  id            Int       @id @default(autoincrement())
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  userAgent     String?
+  lastSuccessAt DateTime?
+  failureCount  Int       @default(0)
+  disabledAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([disabledAt])
+}
+
+/// Durable, replay-safe Vantage app notification. The worker sends these to
+/// every active WebPushSubscription and retries transient provider failures.
+model AppNotificationDelivery {
+  id            Int                           @id @default(autoincrement())
+  dedupeKey     String                        @unique
+  title         String
+  body          String
+  url           String
+  tag           String?
+  urgency       String                        @default("normal")
+  status        AppNotificationDeliveryStatus @default(Pending)
+  attempts      Int                           @default(0)
+  nextAttemptAt DateTime                      @default(now())
+  lastAttemptAt DateTime?
+  sentAt        DateTime?
+  expiresAt     DateTime?
+  lastError     String?
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([expiresAt])
+}
+
+enum AppNotificationDeliveryStatus {
+  Pending
+  Sending
+  Sent
+  Dead
+}
+
 model BacktestRun {
   id        Int      @id @default(autoincrement())
   startDate DateTime

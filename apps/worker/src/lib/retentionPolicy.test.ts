@@ -20,9 +20,10 @@ it('computes every cutoff from the configured windows', () => {
     NOW.getTime() - RETENTION_DAYS.telegramSent * DAY_MS,
   );
   assert.equal(
-    cutoffs.llmCallBefore.getTime(),
-    NOW.getTime() - RETENTION_DAYS.llmCall * DAY_MS,
+    cutoffs.appNotificationSentBefore.getTime(),
+    NOW.getTime() - RETENTION_DAYS.appNotificationSent * DAY_MS,
   );
+  assert.equal(cutoffs.llmCallBefore.getTime(), NOW.getTime() - RETENTION_DAYS.llmCall * DAY_MS);
   assert.equal(
     cutoffs.catalystEventDrainBefore.getTime(),
     NOW.getTime() - CATALYST_DRAIN_HOURS * 3600 * 1000,
@@ -32,6 +33,7 @@ it('computes every cutoff from the configured windows', () => {
 it('keeps failures around much longer than successes', () => {
   assert.ok(RETENTION_DAYS.jobRunFailed >= 3 * RETENTION_DAYS.jobRunSucceeded);
   assert.ok(RETENTION_DAYS.telegramDead >= RETENTION_DAYS.telegramSent);
+  assert.ok(RETENTION_DAYS.appNotificationDead >= RETENTION_DAYS.appNotificationSent);
 });
 
 it('keeps tier-3 articles beyond every read window that consumes them', () => {

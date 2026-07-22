@@ -7,9 +7,8 @@
 
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
-import { getSettings, Prisma, updateSettings } from '@vantage/db';
+import { countActiveWebPushSubscriptions, getSettings, Prisma, updateSettings } from '@vantage/db';
 import { verifyPassword } from '@/lib/auth';
-import { callWorker } from '@/lib/worker';
 import { componentLogger } from '@vantage/notify';
 
 const log = componentLogger('web/actions/settings');
@@ -34,10 +33,10 @@ export interface DiscoveryWeightsForm {
 
 export type ExchangeCode = 'US' | 'TO' | 'NE' | 'V';
 
-export interface NotificationDeliveryStatus {
-  state: 'ready' | 'setup-required' | 'unavailable';
-  pending: number;
-  dead: number;
+export interface AppNotificationConfig {
+  configured: boolean;
+  publicKey: string | null;
+  activeSubscriptions: number;
 }
 
 export interface SettingsFormPayload {
@@ -213,28 +212,19 @@ export async function saveSettings(
   }
 }
 
-export async function getNotificationDeliveryStatus(): Promise<NotificationDeliveryStatus> {
-  const response = await callWorker<{
-    telegram?: { configured?: boolean; pending?: number; dead?: number };
-  }>('/health/deep', { includeErrorData: true });
-  const telegram = response.data?.telegram;
-  if (!telegram) return { state: 'unavailable', pending: 0, dead: 0 };
-  return {
-    state: telegram.configured ? 'ready' : 'setup-required',
-    pending: Number(telegram.pending ?? 0),
-    dead: Number(telegram.dead ?? 0),
-  };
-}
-
-/** Send one real phone notification through the worker's configured bot. */
-export async function sendTestNotification(): Promise<{ ok: boolean; error?: string }> {
-  const response = await callWorker<{ ok?: boolean; messageId?: number }>('/jobs/telegram/test', {
-    method: 'POST',
-  });
-  if (!response.ok || response.data?.ok !== true) {
-    return { ok: false, error: 'Telegram delivery is not configured yet.' };
+export async function getAppNotificationConfig(): Promise<AppNotificationConfig> {
+  const publicKey = process.env['WEB_PUSH_PUBLIC_KEY']?.trim() || null;
+  let activeSubscriptions = 0;
+  try {
+    activeSubscriptions = await countActiveWebPushSubscriptions();
+  } catch (err) {
+    log.warn({ err }, 'app notification subscription count unavailable');
   }
-  return { ok: true };
+  return {
+    configured: publicKey !== null,
+    publicKey,
+    activeSubscriptions,
+  };
 }
 
 /**

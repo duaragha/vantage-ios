@@ -38,6 +38,10 @@ import { snapshotGoals } from './jobs/snapshotGoals.js';
 import { updateLotteryFlags } from './jobs/updateLotteryFlags.js';
 import { backfillProfiles } from './jobs/backfillProfiles.js';
 import { hasPendingTelegramWork, runTelegramDispatch } from './jobs/dispatchTelegram.js';
+import {
+  hasPendingAppNotificationWork,
+  runAppNotificationDispatch,
+} from './jobs/dispatchAppNotifications.js';
 import { retentionSweep } from './jobs/retentionSweep.js';
 import { evaluateAllTheses } from '@vantage/core';
 import { prisma } from '@vantage/db';
@@ -217,6 +221,15 @@ export const CRON_SPECS: readonly CronSpec[] = [
     run: runTelegramDispatch,
     precheck: hasPendingTelegramWork,
   },
+  {
+    // Vantage app pushes get their own durable dispatcher. The ten-second
+    // offset puts newly-created digest/catalyst rows on the phone quickly.
+    expr: '10,40 * * * * *',
+    name: 'app-notification.dispatch',
+    bucketSeconds: 30,
+    run: runAppNotificationDispatch,
+    precheck: hasPendingAppNotificationWork,
+  },
   // Digests — times in America/Toronto per spec ### Scheduling.
   {
     expr: '0 7 * * 1-5',
@@ -328,8 +341,9 @@ export const CRON_SPECS: readonly CronSpec[] = [
     run: (log) => evaluateAllTheses({ staleOnly: false, sendTelegram: true, log }),
   },
   // Nightly bounded retention for operational tables (JobRun, sent/dead
-  // Telegram deliveries, old LLM ledger rows, processed events, stale tier-3
-  // social articles). Windows + safety rules in lib/retentionPolicy.ts.
+  // Telegram/app-notification deliveries, old LLM ledger rows, processed
+  // events, and stale tier-3 social articles). Windows + safety rules in
+  // lib/retentionPolicy.ts.
   // 03:30 ET — after the 2am fundamentals and 3am goals snapshot, before the
   // 3:15am profile backfill window ends.
   {

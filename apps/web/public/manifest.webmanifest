@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Vantage",
+  "short_name": "Vantage",
+  "description": "Personal equity research and portfolio optimization",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090a0c",
+  "theme_color": "#090a0c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

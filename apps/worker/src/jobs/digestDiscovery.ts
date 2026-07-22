@@ -1,21 +1,18 @@
 /**
  * Discovery digest dispatch worker — Phase 15.
  *
- * Wraps `buildDiscoveryDigest` from @vantage/core, renders the result
- * with `formatDiscoveryDigestForTelegram`, and ships via @vantage/notify.
+ * Wraps `buildDiscoveryDigest` from @vantage/core and queues the matching
+ * Vantage app notification.
  *
  * Runs weekly (Saturday 10am America/Toronto) and on-demand via
  * POST /jobs/digest/discovery.
  */
 
 import type { FastifyBaseLogger } from 'fastify';
-import {
-  buildDiscoveryDigest,
-  formatDiscoveryDigestForTelegram,
-  type BuildDiscoveryDigestResult,
-} from '@vantage/core';
-import { getNotificationPreferences, prisma, queueTelegramDelivery } from '@vantage/db';
+import { buildDiscoveryDigest, type BuildDiscoveryDigestResult } from '@vantage/core';
+import { getNotificationPreferences, prisma, queueAppNotification } from '@vantage/db';
 import { sendSelfAlert } from '@vantage/notify';
+import { buildDigestAppNotification } from '../lib/appNotificationContent.js';
 import {
   includeInsightInNotification,
   shouldQueueDigestNotification,
@@ -28,11 +25,7 @@ export interface DiscoveryDispatchResult {
   failedSources: string[];
   tokens: BuildDiscoveryDigestResult['tokens'];
   llmCallIds: number[];
-  telegram: { ok: true; queued: boolean; deliveryId: number | null };
-}
-
-function deepLinkBase(): string {
-  return process.env['DASHBOARD_BASE_URL'] ?? 'http://localhost:3000';
+  appNotification: { ok: true; queued: boolean; deliveryId: number | null };
 }
 
 export async function runDiscoveryDigest(
@@ -48,8 +41,8 @@ export async function runDiscoveryDigest(
     throw err;
   }
 
-  // Re-hydrate the insights with their actionJson so the Telegram formatter
-  // can pick the rotation icon for dual-ticker cards.
+  // Re-hydrate the persisted insights so app notifications use the canonical
+  // title, body, and kind written by the discovery pipeline.
   const hydrated =
     digest.insights.length > 0
       ? await prisma.insight.findMany({
@@ -71,14 +64,7 @@ export async function runDiscoveryDigest(
   );
   const shouldQueue = shouldQueueDigestNotification(preferences, notificationInsights.length);
 
-  const markdown = formatDiscoveryDigestForTelegram(
-    preferences.scheduledDigests ? digest.summary : 'New actionable recommendations are ready.',
-    notificationInsights,
-    {
-      deepLinkBase: deepLinkBase(),
-      failedSources: digest.failedSources,
-    },
-  );
+  const content = buildDigestAppNotification('discovery', digest.summary, notificationInsights);
 
   const identity =
     digest.insights.length > 0
@@ -87,11 +73,9 @@ export async function runDiscoveryDigest(
         ? `llm:${digest.llmCallIds.join(',')}`
         : `hour:${new Date().toISOString().slice(0, 13)}`;
   const delivery = shouldQueue
-    ? await queueTelegramDelivery({
-        dedupeKey: `digest:discovery:${identity}`,
-        text: markdown,
-        parseMode: 'Markdown',
-        disableWebPagePreview: true,
+    ? await queueAppNotification({
+        dedupeKey: `app:digest:discovery:${identity}`,
+        ...content,
         expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       })
     : null;
@@ -112,11 +96,11 @@ export async function runDiscoveryDigest(
       insights: digest.insights.length,
     },
     delivery
-      ? 'discovery digest queued for Telegram delivery'
-      : 'discovery digest notification muted by settings',
+      ? 'discovery digest queued for Vantage app delivery'
+      : 'discovery digest app notification muted by settings',
   );
   return {
     ...base,
-    telegram: { ok: true, queued: delivery !== null, deliveryId: delivery?.id ?? null },
+    appNotification: { ok: true, queued: delivery !== null, deliveryId: delivery?.id ?? null },
   };
 }

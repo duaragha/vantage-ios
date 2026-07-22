@@ -16,6 +16,7 @@ const EXPECTED_SCHEDULES = [
   ['discover.compute', '0 18 * * 1-5'],
   ['alert.dispatch', '*/30 * * * * *'],
   ['telegram.dispatch', '15,45 * * * * *'],
+  ['app-notification.dispatch', '10,40 * * * * *'],
   ['digest.morning', '0 7 * * 1-5'],
   ['digest.evening', '30 16 * * 1-5'],
   ['digest.monthlyAllocation', '0 9 1 * *'],
@@ -32,12 +33,12 @@ const EXPECTED_SCHEDULES = [
   ['db.retention', '30 3 * * *'],
 ] as const;
 
-it('transplants all 26 schedules into Croner without expression drift', () => {
+it('transplants all 27 schedules into Croner without expression drift', () => {
   assert.deepEqual(
     CRON_SPECS.map(({ name, expr }) => [name, expr]),
     EXPECTED_SCHEDULES,
   );
-  assert.equal(new Set(CRON_SPECS.map((spec) => spec.name)).size, 26);
+  assert.equal(new Set(CRON_SPECS.map((spec) => spec.name)).size, 27);
 
   for (const spec of CRON_SPECS) {
     const parser = new Cron(spec.expr, {

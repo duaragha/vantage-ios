@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Vantage',
   description: 'Personal equity research and portfolio optimization tool',
   applicationName: 'Vantage',
+  manifest: '/manifest.webmanifest',
   formatDetection: {
     telephone: false,
   },

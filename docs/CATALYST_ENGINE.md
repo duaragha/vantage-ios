@@ -1,6 +1,6 @@
 # Catalyst Engine
 
-The catalyst engine is the swing-trading discovery loop that checks for queued signals every five minutes during US market hours. It watches four categories of catalyst events on tickers Raghav does not currently hold and converts the strongest signals into 48-hour BuySuggestion insights with cap-aware sizing, tier-1 citations, and Telegram delivery.
+The catalyst engine is the swing-trading discovery loop that checks for queued signals every five minutes during US market hours. It watches four categories of catalyst events on tickers Raghav does not currently hold and converts the strongest signals into 48-hour BuySuggestion insights with cap-aware sizing, tier-1 citations, and a high-priority Vantage app notification.
 
 ## Signals
 
@@ -40,7 +40,7 @@ Level 3 is the only path that ignores the user's "already passed on this ticker 
 10. `capValidator` enforces the single-position and sector caps post-purchase.
 11. Persist `Insight` with `kind=BuySuggestion`, `triggeredBy='catalyst:<EventKind>'`, `actionJson.catalystKind`, `actionJson.conjunctionLevel`, `actionJson.urgencyHours=48`, `actionJson.urgencyExpiresAt`.
 12. Mark consumed `MarketEvent` rows as processed.
-13. The worker job (`runCatalystEngine`) ships a Telegram alert per emitted Insight using `formatCatalystAlertForTelegram`.
+13. The worker job (`runCatalystEngine`) queues one durable, high-priority Vantage app notification per emitted Insight.
 
 ## Tuning via /settings
 
@@ -55,18 +55,16 @@ The Settings page exposes four catalyst knobs in the "Catalyst engine" section:
 
 The cron entry `*/5 9-16 * * 1-5` checks every five minutes from 9 AM through 4:59 PM `America/Toronto`, weekdays only. A cheap indexed precheck skips the engine when no unprocessed catalyst event is waiting. Manual trigger: `POST /jobs/catalyst/run` with the worker secret. The five-minute idempotency bucket means a manual poke during the same window as the scheduled run dedups cleanly.
 
-## Telegram dispatch
+## Vantage app delivery
 
-Each emitted Insight fires its own Telegram message via the existing alert-dispatch path. Format:
+Each emitted Insight queues its own Vantage notification. It includes:
 
-- Header line: catalyst kind icon + label + filled/empty conjunction dots.
-- Title line with `Buy <shares> <TICKER>` and dollar cost.
-- Body (the model's reasoning).
-- Detail line: `Confidence: <Low|Medium|High> · Window: 48h · expires <ISO timestamp>`.
-- Deep link to `/insights/<id>`.
-- "Not investment advice." footer.
+- an `Exceptional opportunity` title;
+- the recommended trade and compact reasoning;
+- a deep link to `/insights/<id>`;
+- high Web Push urgency and a 48-hour expiry.
 
-Phone delivery uses the worker's `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. The exceptional-opportunity switch in Settings can mute these individual messages without disabling the engine or hiding its insights in Vantage.
+Phone delivery uses the worker's VAPID keys and the iPhone subscription created by Vantage's Settings page. The exceptional-opportunity switch can mute these pushes without disabling the engine or hiding its insights in Vantage. See [`APP_NOTIFICATIONS.md`](./APP_NOTIFICATIONS.md).
 
 ## Backtesting
 
@@ -75,7 +73,7 @@ The /backtest page now offers `catalyst-driven` as a strategy. The harness repla
 ## Troubleshooting
 
 - **No catalyst suggestions appearing.** Check, in order: (1) `/settings` master toggle is ON, (2) catalyst spend cap is not exhausted (`/ops` shows today's catalyst spend and the cap), (3) `Require multi-signal conjunction` is not blocking your only candidate, (4) the qualityFilter rejection reasons surfaced in worker logs. Common rejection reasons: `no-universe-row` (ticker missing from `TickerUniverse`), `low-mcap` (under $500M), `low-volume` (under $5M average), `no-tier1-news` (no tier-1 article in 30d).
-- **Suggestion shows up on /insights but no Telegram message.** Either `telegramChatId` is unset (intentional dev-mode degradation) or the bot token is missing from `.env`. The worker logs the would-have-sent markdown when Telegram is "not configured".
+- **Suggestion shows up on /insights but no phone notification.** Check that Vantage is installed from Safari with Add to Home Screen, Settings shows `Connected`, the exceptional-opportunity switch is on, and `/health/deep` reports app push configured with at least one subscription.
 - **Engine hits spend cap mid-day.** Default cap is conservative ($1.00). Bump on `/settings` if needed, but expect the LlmCall ledger growth to be modest — Sonnet calls cost ~$0.01-$0.05 each at typical context sizes.
 - **PassCooldown blocking a strong catalyst.** Only conjunction level 3 (the full triplet) overrides an active cooldown. For level 1-2 candidates the user must clear the cooldown manually.
 - **Per-day cap hit early.** The engine ranks candidates by conjunction strength descending, so the strongest signal of the day clears the cap first. Bump `catalystMaxPerDay` if you want broader coverage during a heavy news cycle.
