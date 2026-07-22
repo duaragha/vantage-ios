@@ -222,7 +222,7 @@ export function SettingsForm({
                 aria-pressed={active}
                 onClick={() => setActiveCategory(category.id)}
                 className={cn(
-                  'group flex min-h-16 min-w-[10.5rem] snap-start items-center gap-3 rounded-2xl border px-3 text-left transition active:scale-[0.98] lg:min-w-0',
+                  'group flex h-16 w-[10.5rem] shrink-0 snap-start items-center gap-3 overflow-hidden rounded-2xl border px-3 text-left transition active:scale-[0.98] lg:h-auto lg:min-h-16 lg:w-full lg:min-w-0',
                   active
                     ? 'border-[var(--cc-accent)]/35 bg-[var(--cc-accent)]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
                     : 'border-white/[0.07] bg-white/[0.025] hover:border-white/[0.14] hover:bg-white/[0.045]',
