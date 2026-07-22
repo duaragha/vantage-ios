@@ -61,5 +61,5 @@ workflows:
           ditto -c -k --sequesterRsrc --keepParent "$STAGE_PATH/Payload" "$IPA_PATH"
           unzip -t "$IPA_PATH"
     artifacts:
-      - apps/mobile-capacitor/build/ios/Vantage.ipa
+      - build/ios/Vantage.ipa
       - /tmp/xcodebuild_logs/*.log
