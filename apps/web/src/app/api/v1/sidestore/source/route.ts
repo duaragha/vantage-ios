@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 const CODEMAGIC_API = 'https://api.codemagic.io';
 const APP_ID = '6a5504d651238a3fa7259752';
-const DEFAULT_ORIGIN = 'https://raghavsgamingpc.tail4d6220.ts.net:3500';
+const DEFAULT_ORIGIN = 'https://vantagee.up.railway.app';
 
 interface CodemagicArtifact {
   name: string;

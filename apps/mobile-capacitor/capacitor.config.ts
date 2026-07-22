@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const productionUrl = 'https://web-production-f6337.up.railway.app';
+const productionUrl = 'https://vantagee.up.railway.app';
 
 const config: CapacitorConfig = {
   appId: 'com.raghav.vantage',

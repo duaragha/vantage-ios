@@ -8,7 +8,7 @@ workflows:
       cocoapods: default
       node: 20
       vars:
-        CAPACITOR_SERVER_URL: 'https://web-production-f6337.up.railway.app'
+        CAPACITOR_SERVER_URL: 'https://vantagee.up.railway.app'
     scripts:
       - name: Enable pnpm
         script: |
