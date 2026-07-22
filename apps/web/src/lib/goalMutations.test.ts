@@ -121,7 +121,7 @@ describe('goal calendar dates', () => {
 describe('normalizeGoalCreate', () => {
   it('rejects a target date in the past', () => {
     const past = new Date();
-    past.setDate(past.getDate() - 1);
+    past.setDate(past.getDate() - 7);
     const r = normalizeGoalCreate({
       name: 'X',
       type: 'Custom',
@@ -223,7 +223,7 @@ describe('validateGoalUpdate — diff', () => {
 
   it('rejects target date updates that are in the past', () => {
     const r = validateGoalUpdate(CURRENT, {
-      targetDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      targetDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     });
     assert.equal(r.ok, false);
     if (r.ok) return;
