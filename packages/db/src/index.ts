@@ -20,6 +20,7 @@ export {
   InsightKind,
   InsightStatus,
   Prisma,
+  PositionLotSource,
   RiskTolerance,
   SecurityCategory,
   TelegramDeliveryStatus,
@@ -48,6 +49,7 @@ export type {
   MarketEvent,
   PassCooldown,
   Position,
+  PositionLot,
   Thesis,
   ThesisEvaluation,
   TickerMetrics,
@@ -67,6 +69,7 @@ export * from './insights.js';
 export * from './insiderTransactions.js';
 export * from './passCooldown.js';
 export * from './positions.js';
+export * from './positionLots.js';
 export * from './semanticSearch.js';
 export * from './settings.js';
 export * from './theses.js';

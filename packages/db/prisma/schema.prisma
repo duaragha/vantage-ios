@@ -89,9 +89,37 @@ model Position {
   accountId            Int
   account              Account        @relation(fields: [accountId], references: [id], onDelete: Restrict)
   goalLinks            GoalPosition[]
+  purchaseLots         PositionLot[]
 
   @@unique([accountId, ticker])
   @@index([accountId])
+}
+
+/// One acquisition event for a Position. Position.shares and Position.avgCost
+/// are the materialized aggregate of active (disposedAt = null) lots so the
+/// research engine keeps its cheap snapshot while the user retains real
+/// purchase history. Legacy snapshot-only positions have acquiredAt = null
+/// until the user supplies the true date.
+model PositionLot {
+  id           Int               @id @default(autoincrement())
+  positionId   Int
+  position     Position          @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  acquiredAt   DateTime?         @db.Date
+  shares       Decimal
+  costPerShare Decimal
+  source       PositionLotSource @default(Manual)
+  disposedAt   DateTime?
+  note         String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([positionId, disposedAt, acquiredAt])
+}
+
+enum PositionLotSource {
+  Manual
+  Import
+  Legacy
 }
 
 /// Brokerage account (Wealthsimple sub-account) that owns one or more

@@ -11,8 +11,9 @@
  *     account the lot lives in (e.g. legacy ticker-keyed routes).
  */
 
-import type { Position, Prisma } from '@prisma/client';
+import { PositionLotSource, type Position, type Prisma } from '@prisma/client';
 import { prisma } from './client.js';
+import { closePositionWithLots } from './positionLots.js';
 
 export interface CreatePositionInput {
   accountId: number;
@@ -22,38 +23,42 @@ export interface CreatePositionInput {
   category: string;
   sector?: string | null;
   notes?: string | null;
+  acquiredAt?: Date | null;
+  source?: PositionLotSource;
 }
 
 export interface UpdatePositionInput {
-  shares?: Prisma.Decimal | number | string;
-  avgCost?: Prisma.Decimal | number | string;
   category?: string;
   sector?: string | null;
   notes?: string | null;
 }
 
 export function createPosition(input: CreatePositionInput): Promise<Position> {
-  return prisma.position.create({ data: input });
+  const { acquiredAt = null, source = PositionLotSource.Manual, ...positionData } = input;
+  return prisma.$transaction(async (tx) => {
+    const position = await tx.position.create({ data: positionData });
+    await tx.positionLot.create({
+      data: {
+        positionId: position.id,
+        acquiredAt,
+        shares: position.shares,
+        costPerShare: position.avgCost,
+        source,
+      },
+    });
+    return position;
+  });
 }
 
-export function updatePosition(
-  id: number,
-  input: UpdatePositionInput,
-): Promise<Position> {
+export function updatePosition(id: number, input: UpdatePositionInput): Promise<Position> {
   return prisma.position.update({ where: { id }, data: input });
 }
 
-export function closePosition(
-  id: number,
-  closedAt: Date = new Date(),
-): Promise<Position> {
-  return prisma.position.update({ where: { id }, data: { closedAt } });
+export function closePosition(id: number, closedAt: Date = new Date()): Promise<Position> {
+  return closePositionWithLots(id, closedAt);
 }
 
-export function findPositionByTicker(
-  accountId: number,
-  ticker: string,
-): Promise<Position | null> {
+export function findPositionByTicker(accountId: number, ticker: string): Promise<Position | null> {
   return prisma.position.findUnique({
     where: { accountId_ticker: { accountId, ticker } },
   });
