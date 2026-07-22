@@ -82,7 +82,7 @@ Keep the existing dashboard password/session, Codemagic and provider variables
 used by web routes. Leave the legacy `TAILSCALE_BASE_URL` unset on Railway;
 SideStore uses `DASHBOARD_BASE_URL` first.
 
-The Capacitor wrapper and `apps/mobile-capacitor/codemagic.yaml` must use the
+The Capacitor wrapper and root `codemagic.yaml` must use the
 same public Railway URL. An already-installed IPA keeps its previously baked
 server URL until a new mobile build is installed.
 
