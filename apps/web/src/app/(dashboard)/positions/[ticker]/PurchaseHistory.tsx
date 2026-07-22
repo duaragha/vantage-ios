@@ -191,7 +191,7 @@ function PurchaseForm({
 }): React.ReactElement {
   const [shares, setShares] = React.useState(lot?.shares ?? '');
   const [cost, setCost] = React.useState(lot?.costPerShare ?? '');
-  const [date, setDate] = React.useState(lot?.acquiredAt ?? torontoDateKey());
+  const [date, setDate] = React.useState(lot ? (lot.acquiredAt ?? '') : torontoDateKey());
   const [note, setNote] = React.useState(lot?.note ?? '');
   const [working, setWorking] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
